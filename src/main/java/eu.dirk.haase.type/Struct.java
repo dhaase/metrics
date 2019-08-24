@@ -151,7 +151,9 @@ import java.nio.ByteOrder;
 @SuppressWarnings("unchecked")
 public abstract class Struct {
 
-    private static final Class<? extends Bool[]> BOOL = new Bool[0].getClass();
+    private static final Class<? extends Bool8[]> BOOL_8 = new Bool8[0].getClass();
+    private static final Class<? extends Bool16[]> BOOL_16 = new Bool16[0].getClass();
+    private static final Class<? extends Bool32[]> BOOL_32 = new Bool32[0].getClass();
     private static final Class<? extends Float32[]> FLOAT_32 = new Float32[0]
             .getClass();
     private static final Class<? extends Float64[]> FLOAT_64 = new Float64[0]
@@ -340,9 +342,17 @@ public abstract class Struct {
             _index = 0;
             _resetIndex = false; // Ensures the array elements are sequential.
         }
-        if (BOOL.isInstance(arrayMember)) {
+        if (BOOL_8.isInstance(arrayMember)) {
             for (int i = 0; i < arrayMember.length; ) {
-                arrayMember[i++] = (M) this.new Bool();
+                arrayMember[i++] = (M) this.new Bool8();
+            }
+        } else if (BOOL_16.isInstance(arrayMember)) {
+            for (int i = 0; i < arrayMember.length; ) {
+                arrayMember[i++] = (M) this.new Bool16();
+            }
+        } else if (BOOL_32.isInstance(arrayMember)) {
+            for (int i = 0; i < arrayMember.length; ) {
+                arrayMember[i++] = (M) this.new Bool32();
             }
         } else if (SIGNED_8.isInstance(arrayMember)) {
             for (int i = 0; i < arrayMember.length; ) {
@@ -464,7 +474,7 @@ public abstract class Struct {
 
     public final void clear(final ByteBuffer byteBuffer) {
         final int size = size();
-        for (int index = getByteBufferPosition(); size > index; ++index) {
+        for (int index = getByteBufferPosition(byteBuffer); size > index; ++index) {
             byteBuffer.put(index, (byte) 0);
         }
     }
@@ -495,10 +505,21 @@ public abstract class Struct {
      * @return the absolute position of this struct (can be an inner struct)
      * in the byte buffer.
      */
-    public final int getByteBufferPosition() {
+    public final int getRelativeByteBufferPosition() {
         return (_outer != null
-                ? _outer.getByteBufferPosition() + _outerOffset
+                ? _outer.getRelativeByteBufferPosition() + _outerOffset
                 : _outerOffset);
+    }
+
+    /**
+     * Returns the absolute byte position of this struct within its associated
+     * {@link #getByteBuffer byte buffer}.
+     *
+     * @return the absolute position of this struct (can be an inner struct)
+     * in the byte buffer.
+     */
+    public final int getByteBufferPosition(final ByteBuffer byteBuffer) {
+        return getRelativeByteBufferPosition() + byteBuffer.position();
     }
 
     /**
@@ -624,9 +645,9 @@ public abstract class Struct {
         }
         final int alreadyRead = size - remaining; // typically 0
         if (byteBuffer.hasArray()) {
-            final int offset = byteBuffer.arrayOffset() + getByteBufferPosition();
+            final int offset = byteBuffer.arrayOffset() + getByteBufferPosition(byteBuffer);
             final int bytesRead = in.read(byteBuffer.array(), offset + alreadyRead, remaining);
-            byteBuffer.position(getByteBufferPosition()
+            byteBuffer.position(getByteBufferPosition(byteBuffer)
                     + alreadyRead
                     + bytesRead
                     - offset);
@@ -635,7 +656,7 @@ public abstract class Struct {
             synchronized (byteBuffer) {
                 final byte[] _bytes = new byte[size()];
                 final int bytesRead = in.read(_bytes, 0, remaining);
-                byteBuffer.position(getByteBufferPosition() + alreadyRead);
+                byteBuffer.position(getByteBufferPosition(byteBuffer) + alreadyRead);
                 byteBuffer.put(_bytes, 0, bytesRead);
                 return bytesRead;
             }
@@ -661,7 +682,7 @@ public abstract class Struct {
         bitStart = (_byteOrder == ByteOrder.BIG_ENDIAN)
                 ? bitStart
                 : 64 - bitSize - bitStart;
-        final int index = getByteBufferPosition() + offset;
+        final int index = getByteBufferPosition(byteBuffer) + offset;
         long value = readByteBufferLong(byteBuffer, index);
         value <<= bitStart; // Clears preceding bits.
         value >>= (64 - bitSize); // Signed shift.
@@ -760,10 +781,10 @@ public abstract class Struct {
     public String toString() {
         final StringBuilder tmp = new StringBuilder();
         final int size = size();
-        final ByteBuffer buffer = getByteBuffer();
-        final int start = getByteBufferPosition();
+        final ByteBuffer byteBuffer = getByteBuffer();
+        final int start = getByteBufferPosition(byteBuffer);
         for (int i = 0; i < size; i++) {
-            int b = buffer.get(start + i) & 0xFF;
+            int b = byteBuffer.get(start + i) & 0xFF;
             tmp.append(HEXA[b >> 4]);
             tmp.append(HEXA[b & 0xF]);
             tmp.append(((i & 0xF) == 0xF) ? '\n' : ' ');
@@ -785,12 +806,12 @@ public abstract class Struct {
      */
     public void write(final ByteBuffer byteBuffer, final OutputStream out) throws IOException {
         if (byteBuffer.hasArray()) {
-            final int offset = byteBuffer.arrayOffset() + getByteBufferPosition();
+            final int offset = byteBuffer.arrayOffset() + getByteBufferPosition(byteBuffer);
             out.write(byteBuffer.array(), offset, size());
         } else {
             synchronized (byteBuffer) {
                 final byte[] _bytes = new byte[size()];
-                byteBuffer.position(getByteBufferPosition());
+                byteBuffer.position(getByteBufferPosition(byteBuffer));
                 byteBuffer.get(_bytes);
                 out.write(_bytes);
             }
@@ -821,7 +842,7 @@ public abstract class Struct {
         mask <<= 64 - bitSize - bitStart;
         value <<= (64 - bitSize - bitStart);
         value &= mask; // Protects against out of range values.
-        final int index = getByteBufferPosition() + offset;
+        final int index = getByteBufferPosition(byteBuffer) + offset;
         final long oldValue = readByteBufferLong(byteBuffer, index);
         final long resetValue = oldValue & (~mask);
         final long newValue = resetValue | value;
@@ -875,15 +896,15 @@ public abstract class Struct {
         /**
          * Holds the relative bit offset of this member to its struct offset.
          */
-        private final int _bitIndex;
+        final int _bitIndex;
         /**
          * Holds the bit length of this member.
          */
-        private final int _bitLength;
+        final int _bitLength;
         /**
          * Holds the relative offset (in bytes) of this member within its struct.
          */
-        private final int _offset;
+        final int _offset;
 
         /**
          * Base constructor for custom member types.
@@ -974,8 +995,8 @@ public abstract class Struct {
         }
 
         // Returns the member int value.
-        final int get(final int wordSize, final int wordValue) {
-            final int shift = (_byteOrder == ByteOrder.BIG_ENDIAN) ? (wordSize << 3)
+        final int getWord(final int wordValue) {
+            final int shift = (_byteOrder == ByteOrder.BIG_ENDIAN) ? (_wordSize << 3)
                     - bitIndex() - bitLength()
                     : bitIndex();
             int word = wordValue;
@@ -985,9 +1006,9 @@ public abstract class Struct {
         }
 
         // Returns the member long value.
-        final long get(final int wordSize, final long wordValue) {
+        final long getWord(final long wordValue) {
             final int shift = (_byteOrder == ByteOrder.BIG_ENDIAN)
-                    ? (wordSize << 3) - bitIndex() - bitLength()
+                    ? (_wordSize << 3) - bitIndex() - bitLength()
                     : bitIndex();
             long word = wordValue;
             word >>= shift;
@@ -1006,9 +1027,9 @@ public abstract class Struct {
         }
 
         // Sets the member int value.
-        final int set(int value, final int wordSize, final int word) {
+        final int setWord(int value, final int word) {
             final int shift = (_byteOrder == ByteOrder.BIG_ENDIAN)
-                    ? (wordSize << 3) - bitIndex() - bitLength()
+                    ? (_wordSize << 3) - bitIndex() - bitLength()
                     : bitIndex();
             int mask = 0xFFFFFFFF >>> (32 - bitLength());
             mask <<= shift;
@@ -1017,9 +1038,9 @@ public abstract class Struct {
         }
 
         // Sets the member long value.
-        final long set(long value, final int wordSize, final long word) {
+        final long setWord(long value, final long word) {
             final int shift = (_byteOrder == ByteOrder.BIG_ENDIAN)
-                    ? (wordSize << 3) - bitIndex() - bitLength()
+                    ? (_wordSize << 3) - bitIndex() - bitLength()
                     : bitIndex();
             long mask = 0xFFFFFFFFFFFFFFFFL >>> (64 - bitLength());
             mask <<= shift;
@@ -1098,13 +1119,13 @@ public abstract class Struct {
      * This class represents a 8 bits boolean with <code>true</code> represented
      * by <code>1</code> and <code>false</code> represented by <code>0</code>.
      */
-    public final class Bool extends AbstractMember {
+    public final class Bool8 extends AbstractMember {
 
-        public Bool() {
+        public Bool8() {
             super(8, 1);
         }
 
-        public Bool(int nbrOfBits) {
+        public Bool8(int nbrOfBits) {
             super(nbrOfBits, 1);
         }
 
@@ -1113,9 +1134,9 @@ public abstract class Struct {
         }
 
         public boolean get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             int word = byteBuffer.get(index);
-            word = (bitLength() == 8) ? word : get(1, word);
+            word = (bitLength() == 8) ? word : getWord(word);
             return word != 0;
         }
 
@@ -1124,13 +1145,106 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final boolean value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
+            final byte byteValue = (byte) (value ? 1 : 0);
             if (bitLength() == 8) {
-                byteBuffer.put(index, (byte) (value ? -1 : 0));
+                byteBuffer.put(index, byteValue);
             } else {
                 byteBuffer.put(
                         index,
-                        (byte) set(value ? -1 : 0, 1, byteBuffer.get(index)));
+                        (byte) setWord(byteValue, byteBuffer.get(index)));
+            }
+        }
+
+        public String toString() {
+            return String.valueOf(this.get());
+        }
+    }
+
+    /**
+     * This class represents a 8 bits boolean with <code>true</code> represented
+     * by <code>1</code> and <code>false</code> represented by <code>0</code>.
+     */
+    public final class Bool16 extends AbstractMember {
+
+        public Bool16() {
+            this(16);
+        }
+
+        public Bool16(int nbrOfBits) {
+            super(nbrOfBits, 2);
+        }
+
+        public boolean get() {
+            return get(getByteBuffer());
+        }
+
+        public boolean get(final ByteBuffer byteBuffer) {
+            final int index = getByteBufferPosition(byteBuffer) + offset();
+            int word = byteBuffer.getShort(index);
+            word = (bitLength() == 16) ? word : getWord(word);
+            return word != 0;
+        }
+
+        public void set(final boolean value) {
+            set(getByteBuffer(), value);
+        }
+
+        public void set(final ByteBuffer byteBuffer, final boolean value) {
+            final int index = getByteBufferPosition(byteBuffer) + offset();
+            final short byteValue = (short) (value ? 1 : 0);
+            if (bitLength() == 16) {
+                byteBuffer.putShort(index, byteValue);
+            } else {
+                byteBuffer.putShort(
+                        index,
+                        (byte) setWord(byteValue, byteBuffer.get(index)));
+            }
+        }
+
+        public String toString() {
+            return String.valueOf(this.get());
+        }
+    }
+
+    /**
+     * This class represents a 8 bits boolean with <code>true</code> represented
+     * by <code>1</code> and <code>false</code> represented by <code>0</code>.
+     */
+    public final class Bool32 extends AbstractMember {
+
+        public Bool32() {
+            this(32);
+        }
+
+        public Bool32(int nbrOfBits) {
+            super(nbrOfBits, 4);
+        }
+
+        public boolean get() {
+            return get(getByteBuffer());
+        }
+
+        public boolean get(final ByteBuffer byteBuffer) {
+            final int index = getByteBufferPosition(byteBuffer) + offset();
+            int word = byteBuffer.getInt(index);
+            word = (bitLength() == 32) ? word : getWord(word);
+            return word != 0;
+        }
+
+        public void set(final boolean value) {
+            set(getByteBuffer(), value);
+        }
+
+        public void set(final ByteBuffer byteBuffer, final boolean value) {
+            final int index = getByteBufferPosition(byteBuffer) + offset();
+            final int byteValue = (byte) (value ? 1 : 0);
+            if (bitLength() == 32) {
+                byteBuffer.putInt(index, byteValue);
+            } else {
+                byteBuffer.putInt(
+                        index,
+                        (byte) setWord(byteValue, byteBuffer.get(index)));
             }
         }
 
@@ -1161,9 +1275,9 @@ public abstract class Struct {
         }
 
         public T get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             int word = byteBuffer.getShort(index);
-            return _values[0xFFFF & get(2, word)];
+            return _values[0xFFFF & getWord(word)];
         }
 
         public void set(final T value) {
@@ -1177,9 +1291,9 @@ public abstract class Struct {
                         + e
                         + ", ordinal value does not reflect enum values position");
             }
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getShort(index);
-            byteBuffer.putShort(index, (short) set(value, 2, word));
+            byteBuffer.putShort(index, (short) setWord(value, word));
         }
 
         public String toString() {
@@ -1209,9 +1323,9 @@ public abstract class Struct {
         }
 
         public T get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             int word = byteBuffer.getInt(index);
-            return _values[get(4, word)];
+            return _values[getWord(word)];
         }
 
         public void set(final T value) {
@@ -1225,9 +1339,9 @@ public abstract class Struct {
                         + e
                         + ", ordinal value does not reflect enum values position");
             }
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getInt(index);
-            byteBuffer.putInt(index, set(value, 4, word));
+            byteBuffer.putInt(index, setWord(value, word));
         }
 
         public String toString() {
@@ -1257,9 +1371,9 @@ public abstract class Struct {
         }
 
         public T get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final long word = byteBuffer.getLong(index);
-            return _values[(int) get(8, word)];
+            return _values[(int) getWord(word)];
         }
 
         public void set(final T value) {
@@ -1273,9 +1387,9 @@ public abstract class Struct {
                         + e
                         + ", ordinal value does not reflect enum values position");
             }
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final long word = byteBuffer.getLong(index);
-            byteBuffer.putLong(index, set(value, 8, word));
+            byteBuffer.putLong(index, setWord(value, word));
         }
 
         public String toString() {
@@ -1305,9 +1419,9 @@ public abstract class Struct {
         }
 
         public T get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.get(index);
-            return _values[0xFF & get(1, word)];
+            return _values[0xFF & getWord(word)];
         }
 
         public void set(final T value) {
@@ -1321,9 +1435,9 @@ public abstract class Struct {
                         + e
                         + ", ordinal value does not reflect enum values position");
             }
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.get(index);
-            byteBuffer.put(index, (byte) set(value, 1, word));
+            byteBuffer.put(index, (byte) setWord(value, word));
         }
 
         public String toString() {
@@ -1345,7 +1459,7 @@ public abstract class Struct {
         }
 
         public float get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             return byteBuffer.getFloat(index);
         }
 
@@ -1354,7 +1468,7 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final float value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             byteBuffer.putFloat(index, value);
         }
 
@@ -1377,7 +1491,7 @@ public abstract class Struct {
         }
 
         public double get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             return byteBuffer.getDouble(index);
         }
 
@@ -1386,7 +1500,7 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final double value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             byteBuffer.putDouble(index, value);
         }
 
@@ -1420,9 +1534,9 @@ public abstract class Struct {
         }
 
         public short get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getShort(index);
-            return (short) ((bitLength() == 16) ? word : get(2, word));
+            return (short) ((bitLength() == 16) ? word : getWord(word));
         }
 
         public void set(final short value) {
@@ -1430,12 +1544,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final short value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 16) {
                 byteBuffer.putShort(index, value);
             } else {
                 byteBuffer.putShort(index,
-                        (short) set(value, 2, byteBuffer.getShort(index)));
+                        (short) setWord(value, byteBuffer.getShort(index)));
             }
         }
 
@@ -1462,9 +1576,9 @@ public abstract class Struct {
         }
 
         public int get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getInt(index);
-            return (bitLength() == 32) ? word : get(4, word);
+            return (bitLength() == 32) ? word : getWord(word);
         }
 
         public void set(final int value) {
@@ -1472,12 +1586,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final int value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 32) {
                 byteBuffer.putInt(index, value);
             } else {
                 byteBuffer.putInt(index,
-                        set(value, 4, byteBuffer.getInt(index)));
+                        setWord(value, byteBuffer.getInt(index)));
             }
         }
 
@@ -1504,9 +1618,9 @@ public abstract class Struct {
         }
 
         public long get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final long word = byteBuffer.getLong(index);
-            return (bitLength() == 64) ? word : get(8, word);
+            return (bitLength() == 64) ? word : getWord(word);
         }
 
         public void set(final long value) {
@@ -1514,12 +1628,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final long value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 64) {
                 byteBuffer.putLong(index, value);
             } else {
                 byteBuffer.putLong(index,
-                        set(value, 8, byteBuffer.getLong(index)));
+                        setWord(value, byteBuffer.getLong(index)));
             }
         }
 
@@ -1546,9 +1660,9 @@ public abstract class Struct {
         }
 
         public byte get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.get(index);
-            return (byte) ((bitLength() == 8) ? word : get(1, word));
+            return (byte) ((bitLength() == 8) ? word : getWord(word));
         }
 
         public void set(final byte value) {
@@ -1556,12 +1670,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final byte value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 8) {
                 byteBuffer.put(index, value);
             } else {
                 byteBuffer.put(index,
-                        (byte) set(value, 1, byteBuffer.get(index)));
+                        (byte) setWord(value, byteBuffer.get(index)));
             }
         }
 
@@ -1593,7 +1707,7 @@ public abstract class Struct {
             synchronized (byteBuffer) {
                 final StringBuilder tmp = new StringBuilder();
                 try {
-                    int index = getByteBufferPosition() + offset();
+                    int index = getByteBufferPosition(byteBuffer) + offset();
                     byteBuffer.position(index);
                     _reader.setInput(byteBuffer);
                     for (int i = 0; i < _length; i++) {
@@ -1620,7 +1734,7 @@ public abstract class Struct {
         public void set(final ByteBuffer byteBuffer, final String string) {
             synchronized (byteBuffer) {
                 try {
-                    final int index = getByteBufferPosition() + offset();
+                    final int index = getByteBufferPosition(byteBuffer) + offset();
                     byteBuffer.position(index);
                     _writer.setOutput(byteBuffer);
                     if (string.length() < _length) {
@@ -1670,9 +1784,9 @@ public abstract class Struct {
         }
 
         public char get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final char word = byteBuffer.getChar(index);
-            return (char) ((bitLength() == 16) ? word : get(2, word));
+            return (char) ((bitLength() == 16) ? word : getWord(word));
         }
 
         public void set(final char value) {
@@ -1680,12 +1794,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final char value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 16) {
                 byteBuffer.putChar(index, value);
             } else {
                 byteBuffer.putChar(index,
-                        (char) set(value, 2, byteBuffer.getChar(index)));
+                        (char) setWord(value, byteBuffer.getChar(index)));
             }
         }
 
@@ -1712,9 +1826,9 @@ public abstract class Struct {
         }
 
         public char get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.get(index);
-            return (char) (0xFF & ((bitLength() == 8) ? word : get(1, word)));
+            return (char) (0xFF & ((bitLength() == 8) ? word : getWord(word)));
         }
 
         public void set(final CharSequence single) {
@@ -1730,12 +1844,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final char value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 8) {
                 byteBuffer.put(index, (byte) value);
             } else {
                 byteBuffer.put(index,
-                        (byte) set(value, 1, byteBuffer.get(index)));
+                        (byte) setWord(value, byteBuffer.get(index)));
             }
         }
 
@@ -1762,9 +1876,9 @@ public abstract class Struct {
         }
 
         public int get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getShort(index);
-            return 0xFFFF & ((bitLength() == 16) ? word : get(2, word));
+            return 0xFFFF & ((bitLength() == 16) ? word : getWord(word));
         }
 
         public void set(final int value) {
@@ -1772,12 +1886,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final int value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 16) {
                 byteBuffer.putShort(index, (short) value);
             } else {
                 byteBuffer.putShort(index,
-                        (short) set(value, 2, byteBuffer.getShort(index)));
+                        (short) setWord(value, byteBuffer.getShort(index)));
             }
         }
 
@@ -1804,9 +1918,9 @@ public abstract class Struct {
         }
 
         public long get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.getInt(index);
-            return 0xFFFFFFFFL & ((bitLength() == 32) ? word : get(4, word));
+            return 0xFFFFFFFFL & ((bitLength() == 32) ? word : getWord(word));
         }
 
         public void set(final long value) {
@@ -1814,12 +1928,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final long value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 32) {
                 byteBuffer.putInt(index, (int) value);
             } else {
                 byteBuffer.putInt(index,
-                        set((int) value, 4, byteBuffer.getInt(index)));
+                        setWord((int) value, byteBuffer.getInt(index)));
             }
         }
 
@@ -1846,9 +1960,9 @@ public abstract class Struct {
         }
 
         public short get(final ByteBuffer byteBuffer) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             final int word = byteBuffer.get(index);
-            return (short) (0xFF & ((bitLength() == 8) ? word : get(1, word)));
+            return (short) (0xFF & ((bitLength() == 8) ? word : getWord(word)));
         }
 
         public void set(final short value) {
@@ -1856,12 +1970,12 @@ public abstract class Struct {
         }
 
         public void set(final ByteBuffer byteBuffer, final short value) {
-            final int index = getByteBufferPosition() + offset();
+            final int index = getByteBufferPosition(byteBuffer) + offset();
             if (bitLength() == 8) {
                 byteBuffer.put(index, (byte) value);
             } else {
                 byteBuffer.put(index,
-                        (byte) set(value, 1, byteBuffer.get(index)));
+                        (byte) setWord(value, byteBuffer.get(index)));
             }
         }
 

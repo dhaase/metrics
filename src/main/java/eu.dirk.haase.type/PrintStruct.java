@@ -7,7 +7,7 @@ public class PrintStruct {
 
     public static void print(int indent, Struct struct) throws IllegalAccessException {
         String indentStr = indentSpace(indent);
-        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getByteBufferPosition());
+        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getByteBufferPosition(struct.getByteBuffer()));
         members(++indent, struct);
         System.out.println(indentStr + "} ");
     }
@@ -22,9 +22,10 @@ public class PrintStruct {
 
 
     public static void members(int indent, Struct struct) throws IllegalAccessException {
-        int offset = struct.getByteBufferPosition();
+        int offset = struct.getByteBufferPosition(struct.getByteBuffer());
         String indentStr = indentSpace(indent);
         for (Field f : struct.getClass().getDeclaredFields()) {
+            f.setAccessible(true);
             Object value = f.get(struct);
             if (Struct.class.isAssignableFrom(f.getType())) {
                 print(indent, (Struct) value);
