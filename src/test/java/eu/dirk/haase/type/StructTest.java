@@ -230,13 +230,13 @@ public class StructTest {
     }
 
     @Test
-    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian_on_position_and_offset() {
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 54, 76);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -249,15 +249,14 @@ public class StructTest {
         test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 54, 0);
     }
 
-
     @Test
-    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian() {
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian_on_position_and_offset() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0, 0);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 54, 76);
     }
 
     @Test
@@ -365,13 +364,13 @@ public class StructTest {
     }
 
     @Test
-    public void test_packet_struct_that_member_values_are_correct_written_big_endian_on_position_and_offset() {
+    public void test_packet_struct_that_member_values_are_correct_written_big_endian() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 43, 23);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -385,13 +384,13 @@ public class StructTest {
     }
 
     @Test
-    public void test_packet_struct_that_member_values_are_correct_written_big_endian() {
+    public void test_packet_struct_that_member_values_are_correct_written_big_endian_on_position_and_offset() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0, 0);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 43, 23);
     }
 
     @Test
