@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StructTest {
 
 
-    private void test_packet_struct_that_member_values_are_correct_read(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer) {
+    private void test_packet_struct_that_member_values_are_correct_read(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer, int position, int structOffset) {
         // Given
         byte bool8 = 1;
         short bool16 = 0;
@@ -30,6 +30,8 @@ public class StructTest {
         long unsigned32 = Integer.MAX_VALUE - 1;
         byte utfChar8 = 'A';
         char utfChar16 = 'A';
+
+        byteBuffer.position(position + structOffset);
 
         byteBuffer.put(bool8);
         byteBuffer.putShort(bool16);
@@ -52,7 +54,9 @@ public class StructTest {
         byteBuffer.putChar(utfChar16);
 
         // When
-        scalarStruct.setByteBuffer(byteBuffer, 0);
+        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+        byteBuffer.position(position);
+
         scalarStruct.bool08.set(bool8);
         scalarStruct.bool16.set(bool16);
         scalarStruct.bool32.set(bool32);
@@ -103,7 +107,27 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 0, 0);
+    }
+
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_read_big_endian_on_position() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // test
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 23, 0);
+    }
+
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_read_big_endian_on_position_and_offset() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // test
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 23, 42);
     }
 
     @Test
@@ -113,7 +137,7 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -123,10 +147,10 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // test
-        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 0, 0);
     }
 
-    private void test_packet_struct_that_member_values_are_correct_with_roundtrip(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer) {
+    private void test_packet_struct_that_member_values_are_correct_with_roundtrip(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer, int position, int structOffset) {
         // Given
         boolean bool8 = true;
         boolean bool16 = false;
@@ -144,8 +168,16 @@ public class StructTest {
         byte utfChar8 = 'A';
         char utfChar16 = 'A';
 
+        final byte prefix = 12;
+        byteBuffer.position(0);
+        for (int i = 0; position > i; ++i) {
+            byteBuffer.put(prefix);
+        }
+        assertThat(byteBuffer.position()).isEqualTo(position);
+
         // When
-        scalarStruct.setByteBuffer(byteBuffer, 0);
+        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+
         scalarStruct.bool08.set(bool8);
         scalarStruct.bool16.set(bool16);
         scalarStruct.bool32.set(bool32);
@@ -167,6 +199,14 @@ public class StructTest {
         scalarStruct.utfChar16.set(utfChar16);
 
         // Then
+
+        byteBuffer.position(0);
+        for (int i = 0; position > i; ++i) {
+            assertThat(byteBuffer.get()).isEqualTo(prefix);
+        }
+        assertThat(byteBuffer.position()).isEqualTo(position);
+        byteBuffer.position(position);
+
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(scalarStruct.bool08.get()).isEqualTo(bool8);
         assertThat(scalarStruct.bool16.get()).isEqualTo(bool16);
@@ -190,13 +230,34 @@ public class StructTest {
     }
 
     @Test
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian_on_position_and_offset() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // test
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 54, 76);
+    }
+
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian_on_position() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // test
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 54, 0);
+    }
+
+
+    @Test
     public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -206,7 +267,7 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -216,35 +277,10 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // test
-        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0, 0);
     }
 
-    private ByteBuffer convertBuffer = ByteBuffer.allocate(8);
-
-
-    private int toBigEndian(final int value1) {
-        convertBuffer.position(0);
-        convertBuffer.order(ByteOrder.BIG_ENDIAN);
-        convertBuffer.putInt(value1);
-        convertBuffer.position(0);
-        convertBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        final int value2 = convertBuffer.getInt();
-        System.out.println(value1 + " = " + value2 + ": " + swap(value1));
-        return value2;
-    }
-
-    private int toLittleEndian(final int value1) {
-        convertBuffer.position(0);
-        convertBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        convertBuffer.putInt(value1);
-        convertBuffer.position(0);
-        convertBuffer.order(ByteOrder.BIG_ENDIAN);
-        final int value2 = convertBuffer.getInt();
-        System.out.println(value1 + " = " + value2 + ": " + swap(value2));
-        return value2;
-    }
-
-    private void test_packet_struct_that_member_values_are_correct_written(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer) {
+    private void test_packet_struct_that_member_values_are_correct_written(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer, int position, int structOffset) {
         // Given
         byte bool8 = 1;
         short bool16 = 0;
@@ -266,8 +302,16 @@ public class StructTest {
         byte utfChar8 = 'A';
         char utfChar16 = 'A';
 
+        final byte prefix = 12;
+        byteBuffer.position(0);
+        for (int i = 0; position > i; ++i) {
+            byteBuffer.put(prefix);
+        }
+        assertThat(byteBuffer.position()).isEqualTo(position);
+
         // When
-        scalarStruct.setByteBuffer(byteBuffer, 0);
+        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+        byteBuffer.position(position);
 
         scalarStruct.bool08.set(bool8);
         scalarStruct.bool16.set(bool16);
@@ -290,6 +334,14 @@ public class StructTest {
         scalarStruct.utfChar16.set(utfChar16);
 
         // Then
+
+        byteBuffer.position(0);
+        for (int i = 0; position > i; ++i) {
+            assertThat(byteBuffer.get()).isEqualTo(prefix);
+        }
+        assertThat(byteBuffer.position()).isEqualTo(position);
+        byteBuffer.position(position + structOffset);
+
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(byteBuffer.get()).isEqualTo(bool8);
         assertThat(byteBuffer.getShort()).isEqualTo(bool16);
@@ -313,13 +365,33 @@ public class StructTest {
     }
 
     @Test
+    public void test_packet_struct_that_member_values_are_correct_written_big_endian_on_position_and_offset() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // Test
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 43, 23);
+    }
+
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_written_big_endian_on_position() {
+        // Given
+        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        // Test
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 43, 0);
+    }
+
+    @Test
     public void test_packet_struct_that_member_values_are_correct_written_big_endian() {
         // Given
         MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -329,7 +401,7 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -339,7 +411,7 @@ public class StructTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0, 0);
     }
 
     @Test
@@ -466,16 +538,6 @@ public class StructTest {
 
         assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position());
         assertThat(scalarStruct.size()).isEqualTo(structOffset);
-    }
-
-    public static int swap(int value) {
-
-        int b1 = (value >> 0) & 0xffff;
-        int b2 = (value >> 8) & 0xffff;
-        int b3 = (value >> 16) & 0xffff;
-        int b4 = (value >> 24) & 0xffff;
-
-        return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
     }
 
 

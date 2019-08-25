@@ -177,10 +177,6 @@ public abstract class Struct {
 
     private final ByteOrder structByteOrder;
     /**
-     * Holds the byte buffer backing the struct (top struct).
-     */
-    ByteBuffer _byteBuffer;
-    /**
      * Holds the bits used in the word during construction (for bit fields).
      * This is the number of bits used in the last word.
      */
@@ -198,6 +194,10 @@ public abstract class Struct {
      * Holds this struct alignment in bytes (largest word size of its members).
      */
     int structAlignment = 1;
+    /**
+     * Holds the byte buffer backing the struct (top struct).
+     */
+    ByteBuffer structByteBuffer;
     /**
      * Holds the index position during construction.
      * This is the index a the first unused byte available.
@@ -519,7 +519,7 @@ public abstract class Struct {
      */
     public final ByteBuffer getByteBuffer() {
         if (outerStruct != null) return outerStruct.getByteBuffer();
-        return (_byteBuffer != null) ? _byteBuffer : newBuffer();
+        return (structByteBuffer != null) ? structByteBuffer : newBuffer();
     }
 
     /**
@@ -533,6 +533,13 @@ public abstract class Struct {
         return (outerStruct != null
                 ? outerStruct.getRelativePosition() + structOffset
                 : structOffset);
+    }
+
+    public final void setRelativePosition(final int offset) {
+        if (outerStruct != null) {
+            outerStruct.setRelativePosition(offset + structOffset);
+        }
+        structOffset = offset;
     }
 
     /**
@@ -601,13 +608,13 @@ public abstract class Struct {
     }
 
     private synchronized ByteBuffer newBuffer() {
-        if (_byteBuffer != null) {
-            return _byteBuffer; // Synchronized check.
+        if (structByteBuffer != null) {
+            return structByteBuffer; // Synchronized check.
         }
         final ByteBuffer bf = ByteBuffer.allocateDirect(size());
         bf.order(structByteOrder);
         setByteBuffer(bf, 0);
-        return _byteBuffer;
+        return structByteBuffer;
     }
 
     /**
@@ -725,26 +732,25 @@ public abstract class Struct {
      * {@link Struct#size() size} of this struct plus the offset position.
      *
      * @param byteBuffer the new byte buffer.
-     * @param position   the position of this struct in the specified byte buffer.
+     * @param offset     the position of this struct in the specified byte buffer.
      * @return <code>this</code>
      * @throws IllegalArgumentException      if the specified byteBuffer has a
      *                                       different byte order than this struct.
      * @throws UnsupportedOperationException if this struct is an inner struct.
      * @see #structByteOrder
      */
-    public final Struct setByteBuffer(final ByteBuffer byteBuffer, final int position) {
+    public final void setByteBuffer(final ByteBuffer byteBuffer, final int offset) {
         if (byteBuffer.order() != structByteOrder) {
             throw new IllegalArgumentException(
                     "The byte order of the specified byte buffer"
                             + " is different from this struct byte order");
         }
         if (outerStruct != null) {
-            throw new UnsupportedOperationException(
-                    "Inner struct byte buffer is inherited from outer");
+            outerStruct.setByteBuffer(byteBuffer, offset);
         }
-        _byteBuffer = byteBuffer;
-        structOffset = position;
-        return this;
+        structOffset = offset;
+        structByteBuffer = byteBuffer;
+        setRelativePosition(offset);
     }
 
     /**
@@ -1584,12 +1590,12 @@ public abstract class Struct {
             }
         }
 
-        final void setShort(final ByteBuffer byteBuffer, final short value) {
+        final void setChar(final ByteBuffer byteBuffer, final char value) {
             final int index = getAbsolutePosition(byteBuffer) + memberOffset;
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putShort(index, value);
+                byteBuffer.putChar(index, value);
             } else {
-                byteBuffer.putShort(index, (short) setWord(value, byteBuffer.getShort(index)));
+                byteBuffer.putChar(index, (char) setWord(value, byteBuffer.getChar(index)));
             }
         }
 
@@ -1602,15 +1608,6 @@ public abstract class Struct {
             }
         }
 
-        final void setChar(final ByteBuffer byteBuffer, final char value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putChar(index, value);
-            } else {
-                byteBuffer.putChar(index, (char) setWord(value, byteBuffer.getChar(index)));
-            }
-        }
-
         final void setLong(final ByteBuffer byteBuffer, final long value) {
             final int index = getAbsolutePosition(byteBuffer) + memberOffset;
             if (memberBitLength == memberMaxBitLength) {
@@ -1618,6 +1615,15 @@ public abstract class Struct {
             } else {
                 byteBuffer.putLong(index,
                         setWord(value, byteBuffer.getLong(index)));
+            }
+        }
+
+        final void setShort(final ByteBuffer byteBuffer, final short value) {
+            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+            if (memberBitLength == memberMaxBitLength) {
+                byteBuffer.putShort(index, value);
+            } else {
+                byteBuffer.putShort(index, (short) setWord(value, byteBuffer.getShort(index)));
             }
         }
 
