@@ -7,7 +7,7 @@ public class PrintStruct {
 
     public static void print(int indent, Struct struct) throws IllegalAccessException {
         String indentStr = indentSpace(indent);
-        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getByteBufferPosition(struct.getByteBuffer()));
+        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getAbsolutePosition(struct.getByteBuffer()));
         members(++indent, struct);
         System.out.println(indentStr + "} ");
     }
@@ -22,7 +22,7 @@ public class PrintStruct {
 
 
     public static void members(int indent, Struct struct) throws IllegalAccessException {
-        int offset = struct.getByteBufferPosition(struct.getByteBuffer());
+        int offset = struct.getAbsolutePosition(struct.getByteBuffer());
         String indentStr = indentSpace(indent);
         for (Field f : struct.getClass().getDeclaredFields()) {
             f.setAccessible(true);
@@ -32,10 +32,10 @@ public class PrintStruct {
             } else if (f.getType().isArray()) {
                 Object[] array = (Object[]) value;
                 Struct.AbstractMember member = (Struct.AbstractMember) array[0];
-                System.out.println(indentStr + f.getName() + "[" + array.length + "]: " + (offset + member.offset()));
+                System.out.println(indentStr + f.getName() + "[" + array.length + "]: " + (offset + member.memberOffset));
             } else {
                 Struct.AbstractMember member = (Struct.AbstractMember) value;
-                System.out.println(indentStr + f.getName() + ": " + (offset + member.offset()));
+                System.out.println(indentStr + f.getName() + ": " + (offset + member.memberOffset));
             }
         }
     }

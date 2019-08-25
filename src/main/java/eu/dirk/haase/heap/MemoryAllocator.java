@@ -1,69 +1,86 @@
 package eu.dirk.haase.heap;
 
 import java.nio.ByteBuffer;
+import java.util.function.Predicate;
 
 public class MemoryAllocator {
 
     private final ByteBuffer memory;
     private final Block block;
 
-    private final Predicate hasNext;
-    private final Predicate isFree;
-    private final Predicate isAllocated;
+    private final Predicate0 hasNext;
+    private final Predicate0 isFree;
+    private final Predicate0 isAllocated;
+    private final Predicate<Integer> isEnoughSpace;
 
-    private final Position thisHeaderStart;
-    private final Position thisHeaderEnd;
-    private final Position thisBlockStart;
-    private final Position thisBlockEnd;
-    private final Position freeMemoryStart;
-    private final Position freeMemoryEnd;
-    private final Position nextBlockStart;
-    private final Position remainingFreeSpace;
+    private final Position thisHeaderStartAbsolutPos;
+    private final Position thisHeaderEndAbsolutPos;
+    private final Position thisBlockStartAbsolutPos;
+    private final Position thisBlockEndAbsolutPos;
+    private final Position reservedMemoryStartAbsolutPos;
+    private final Position reservedMemoryEndAbsolutPos;
+    private final Position nextBlockStartAbsolutPos;
+    private final Size remainingBlockSize;
+    private final Position remainingAbsolutSize;
 
 
     public MemoryAllocator(final int size) throws IllegalAccessException {
         this.memory = ByteBuffer.allocateDirect(size);
         this.block = new Block();
         this.hasNext = () -> (this.block.next.get(this.memory) > 0);
-        this.isFree = () -> !this.block.curr.isAllocated.get(this.memory);
-        this.isAllocated = () -> this.block.curr.isAllocated.get(this.memory);
-        this.thisHeaderStart = (p, s) -> p;
-        this.thisHeaderEnd = (p, s) -> p + this.block.size() - 1;
-        this.thisBlockStart = (p, s) -> p;
-        this.thisBlockEnd = (p, s) -> p + this.block.size() + s - 1;
-        this.freeMemoryStart = (p, s) -> this.thisHeaderEnd.calc(p, s) + 1;
-        this.freeMemoryEnd = this.thisBlockEnd;
-        this.nextBlockStart = (p, s) -> this.freeMemoryEnd.calc(p, s) + 1;
-        this.remainingFreeSpace = (p, s) -> this.memory.capacity() - this.freeMemoryEnd.calc(p, s);
+        this.isFree = () -> !this.block.isAllocated.get(this.memory);
+        this.isAllocated = () -> this.block.isAllocated.get(this.memory);
+        this.thisHeaderStartAbsolutPos = (p, s) -> p;
+        this.thisHeaderEndAbsolutPos = (p, s) -> p + this.block.size() - 1;
+        this.thisBlockStartAbsolutPos = thisHeaderStartAbsolutPos;
+        this.thisBlockEndAbsolutPos = (p, s) -> p + this.block.size() + s - 1;
+        this.reservedMemoryStartAbsolutPos = (p, s) -> this.thisHeaderEndAbsolutPos.calc(p, s) + 1;
+        this.reservedMemoryEndAbsolutPos = this.thisBlockEndAbsolutPos;
+        this.nextBlockStartAbsolutPos = (p, s) -> this.reservedMemoryEndAbsolutPos.calc(p, s) + 1;
+        this.remainingBlockSize = (s) -> this.block.size.get(this.memory) - s;
+        this.remainingAbsolutSize = (p, s) -> this.memory.capacity() - this.reservedMemoryEndAbsolutPos.calc(p, s);
+        this.isEnoughSpace = (s) -> (this.block.size.get(this.memory) - s) >= 0;
     }
 
     public ByteBuffer allocate(final int size) {
         int thisBlockStart = findFirstFreeBlockStart(size);
-        if (thisBlockStart <= 0) {
+        if (thisBlockStart < 0) {
             thisBlockStart = findFirstUnusedMemory(size);
         }
         if (thisBlockStart >= 0) {
             this.memory.position(thisBlockStart);
-            final int thisBlockEnd = this.thisBlockEnd.calc(thisBlockStart, size);
+            final int thisBlockEnd = this.thisBlockEndAbsolutPos.calc(thisBlockStart, size);
             if (thisBlockEnd <= this.memory.capacity()) {
-                final int freeMemoryStart = this.freeMemoryStart.calc(thisBlockStart, size);
-                final int freeMemoryEnd = this.freeMemoryEnd.calc(thisBlockStart, size);
-                final int nextBlockStart = this.nextBlockStart.calc(thisBlockStart, size);
-                System.out.println("allocate              size: " + size);
-                System.out.println("allocate this.block.size(): " + this.block.size());
-                System.out.println("allocate    thisBlockStart: " + thisBlockStart);
-                System.out.println("allocate   freeMemoryStart: " + freeMemoryStart);
-                System.out.println("allocate     freeMemoryEnd: " + freeMemoryEnd);
-                System.out.println("allocate      thisBlockEnd: " + thisBlockEnd);
-                if (nextBlockStart >= this.memory.capacity()) {
+                final int reservedMemoryStart = this.reservedMemoryStartAbsolutPos.calc(thisBlockStart, size);
+                final int reservedMemoryEnd = this.reservedMemoryEndAbsolutPos.calc(thisBlockStart, size);
+                final int lastNextBlockStart = this.block.next.get(this.memory);
+                final int currNextBlockStart = this.nextBlockStartAbsolutPos.calc(thisBlockStart, size);
+                System.out.println("allocate                  size: " + size);
+                System.out.println("allocate    this.header.size(): " + this.block.size());
+                System.out.println("allocate        thisBlockStart: " + thisBlockStart);
+                System.out.println("allocate   reservedMemoryStart: " + reservedMemoryStart);
+                System.out.println("allocate     reservedMemoryEnd: " + reservedMemoryEnd);
+                System.out.println("allocate          thisBlockEnd: " + thisBlockEnd);
+                if (currNextBlockStart == this.memory.capacity()) {
                     this.block.next.set(this.memory, 0);
-                } else {
-                    System.out.println("allocate    nextBlockStart: " + nextBlockStart);
-                    this.block.next.set(this.memory, nextBlockStart);
+                } else if (currNextBlockStart < this.memory.capacity()) {
+                    System.out.println("allocate lastNextBlockStart: " + lastNextBlockStart);
+                    System.out.println("allocate currNextBlockStart: " + currNextBlockStart);
+                    final int remainingBlockSize = 0;//this.remainingBlockSize.calc(thisBlockStart, size);
+                    System.out.println("allocate remainingBlockSize: " + remainingBlockSize);
+                    this.memory.position(currNextBlockStart);
+                    if (remainingBlockSize > this.block.size()) {
+                        this.block.size.set(this.memory, remainingBlockSize);
+                        this.block.isAllocated.set(this.memory, false);
+                    } else {
+                        this.block.next.set(this.memory, 0);
+                    }
                 }
+                final int lastReservedMemorySize = this.block.size.get(this.memory);
+                System.out.println("allocate last reserved size: " + lastReservedMemorySize);
                 this.block.size.set(this.memory, size);
-                this.block.curr.position.set(this.memory, freeMemoryStart);
-                System.out.println("allocate remainingFreeSpace: " + remainingFreeSpace.calc(thisBlockStart, size));
+                this.block.isAllocated.set(this.memory, true);
+                System.out.println("allocate remainingFreeSpace: " + remainingAbsolutSize.calc(thisBlockStart, size));
                 System.out.println("allocate ---------------- ");
                 return this.memory.duplicate();
             } else {
@@ -74,19 +91,21 @@ public class MemoryAllocator {
     }
 
     private int findFirstFreeBlockStart(final int size) {
+        this.memory.position(0);
+        System.out.println(" - - findFirstFreeBlockStart - - " + size);
         while (hasNext.check() && isAllocated.check()) {
             final int nextBlockStart = this.block.next.get(this.memory);
             this.memory.position(nextBlockStart);
         }
         int thisBlockStart = this.memory.position();
-        final int availableBlockSpace = this.block.size() - size;
-        if ((hasNext.check() && isFree.check()) && (availableBlockSpace >= 0)) {
+        if (hasNext.check() && isFree.check() && this.isEnoughSpace.test(size)) {
             return thisBlockStart;
         }
         return -1;
     }
 
     private int findFirstUnusedMemory(final int size) {
+        System.out.println(" - - findFirstUnusedMemory - - " + size);
         this.memory.position(0);
         if (!hasNext.check()) {
             return 0;
@@ -95,7 +114,7 @@ public class MemoryAllocator {
             final int nextBlockStart = this.block.next.get(this.memory);
             this.memory.position(nextBlockStart);
         }
-        final int remainingFreeSpace = this.remainingFreeSpace.calc(this.memory.position(), size);
+        final int remainingFreeSpace = this.remainingAbsolutSize.calc(this.memory.position(), size);
         if (remainingFreeSpace >= 0) {
             return this.memory.position();
         }
@@ -105,7 +124,7 @@ public class MemoryAllocator {
 
     public void free(final int position) {
         this.memory.position(position);
-        this.block.curr.isAllocated.set(this.memory, false);
+        this.block.isAllocated.set(this.memory, false);
         defragement();
     }
 
@@ -120,16 +139,17 @@ public class MemoryAllocator {
                     int nextBlockStart = this.block.next.get(this.memory);
                     int nextMemorySize = this.block.size.get(this.memory);
                     System.out.println("defragement firstBlockStart: " + firstBlockStart);
-                    System.out.println("defragement nextBlockStart: " + nextBlockStart);
-                    System.out.println("defragement nextMemorySize: " + nextMemorySize);
+                    System.out.println("defragement  nextBlockStart: " + nextBlockStart);
+                    System.out.println("defragement  nextMemorySize: " + nextMemorySize);
                     this.memory.position(firstBlockStart);
                     int firstMemorySize = this.block.size.get(this.memory);
                     final int freeMemorySize = nextMemorySize + firstMemorySize + this.block.size();
                     System.out.println("defragement firstMemorySize: " + firstMemorySize);
-                    System.out.println("defragement freeMemorySize: " + freeMemorySize);
+                    System.out.println("defragement  freeMemorySize: " + freeMemorySize);
                     this.block.size.set(this.memory, freeMemorySize);
                     this.block.next.set(this.memory, nextBlockStart);
-                    this.block.curr.isAllocated.set(this.memory, false);
+                    this.block.isAllocated.set(this.memory, false);
+                    printBlock(0);
                 }
             } else {
                 isFree = this.isFree.check();
@@ -147,16 +167,19 @@ public class MemoryAllocator {
         while (hasNext.check()) {
             ++count;
             System.out.println("-----------------");
-            System.out.println(count + ": this.memory.position: " + this.memory.position());
-            System.out.println(count + ": position:     " + this.block.curr.position.get(this.memory));
-            System.out.println(count + ": is Allocated: " + this.block.curr.isAllocated.get(this.memory));
-            System.out.println(count + ":     size:     " + this.block.size.get(this.memory));
-            System.out.println(count + ":     next:     " + this.block.next.get(this.memory));
+            printBlock(count);
             System.out.println("-----------------");
             this.memory.position(this.block.next.get(this.memory));
         }
         System.out.println("this.memory.position:  " + this.memory.position());
         System.out.println("this.block.next.get(this.memory): " + this.block.next.get(this.memory));
+    }
+
+    private void printBlock(int count) {
+        System.out.println(count + ":                 at position: " + this.memory.position());
+        System.out.println(count + ": this.block.curr.isAllocated: " + this.block.isAllocated.get(this.memory));
+        System.out.println(count + ":             this.block.size: " + this.block.size.get(this.memory));
+        System.out.println(count + ":             this.block.next: " + this.block.next.get(this.memory));
     }
 
     public static void main(String... args) throws IllegalAccessException {
@@ -181,7 +204,7 @@ public class MemoryAllocator {
     }
 
     @FunctionalInterface
-    interface Predicate {
+    interface Predicate0 {
         boolean check();
     }
 
@@ -189,4 +212,10 @@ public class MemoryAllocator {
     interface Position {
         int calc(int position, int size);
     }
+
+    @FunctionalInterface
+    interface Size {
+        int calc(int size);
+    }
+
 }
