@@ -2,7 +2,7 @@
  * Javolution - Java(TM) Solution for Real-Time and Embedded Systems
  * Copyright (C) 2012 - Javolution (http://javolution.org/)
  * All rights reserved.
- * 
+ *
  * Permission to use, copy, modify, and distribute this software is
  * freely granted, provided that this notice is preserved.
  */
@@ -15,40 +15,39 @@ import java.io.Writer;
 
 /**
  * <p> A UTF-8 stream writer.</p>
- *
+ * <p>
  * <p> This writer supports surrogate <code>char</code> pairs (representing
- *     characters in the range [U+10000 .. U+10FFFF]). It can also be used
- *     to write characters from their unicodes (31 bits) directly
- *     (ref. {@link #write(int)}).</p>
- *
+ * characters in the range [U+10000 .. U+10FFFF]). It can also be used
+ * to write characters from their unicodes (31 bits) directly
+ * (ref. {@link #write(int)}).</p>
+ * <p>
  * <p> Instances of this class can be reused for different output streams
- *     and can be part of a higher level component (e.g. serializer) in order
- *     to avoid dynamic buffer allocation when the destination output changes.
- *     Also wrapping using a <code>java.io.BufferedWriter</code> is unnescessary
- *     as instances of this class embed their own data buffers.</p>
- * 
+ * and can be part of a higher level component (e.g. serializer) in order
+ * to avoid dynamic buffer allocation when the destination output changes.
+ * Also wrapping using a <code>java.io.BufferedWriter</code> is unnescessary
+ * as instances of this class embed their own data buffers.</p>
+ * <p>
  * <p> Note: This writer is unsynchronized and always produces well-formed
- *           UTF-8 sequences.</p>
+ * UTF-8 sequences.</p>
  *
- * @author  <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
+ * @author <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
  * @version 2.0, December 9, 2004
  */
 public final class UTF8StreamWriter extends Writer {
 
     /**
-     * Holds the current output stream or <code>null</code> if closed.
-     */
-    private OutputStream _outputStream;
-
-    /**
      * Holds the bytes' buffer.
      */
     private final byte[] _bytes;
-
+    private char _highSurrogate;
     /**
      * Holds the bytes buffer index.
      */
     private int _index;
+    /**
+     * Holds the current output stream or <code>null</code> if closed.
+     */
+    private OutputStream _outputStream;
 
     /**
      * Creates a UTF-8 writer having a byte buffer of moderate capacity (2048).
@@ -60,51 +59,90 @@ public final class UTF8StreamWriter extends Writer {
     /**
      * Creates a UTF-8 writer having a byte buffer of moderate capacity (2048),
      * initialized to use the provided Output Stream.
-     * 
+     *
      * @param outputStream The OutputStream to Write With
      */
     public UTF8StreamWriter(OutputStream outputStream) {
         _bytes = new byte[2048];
         _outputStream = outputStream;
     }
-    
+
     /**
      * Creates a UTF-8 writer having a byte buffer of specified capacity.
-     * 
+     *
      * @param capacity the capacity of the byte buffer.
      */
     public UTF8StreamWriter(int capacity) {
         _bytes = new byte[capacity];
     }
-    
+
     /**
      * Creates a UTF-8 writer having a byte buffer of specified capacity,
      * initialized to use the provided Output Stream.
-     * 
+     *
      * @param outputStream The OutputStream to Write With
-     * @param capacity the capacity of the byte buffer.
+     * @param capacity     the capacity of the byte buffer.
      */
     public UTF8StreamWriter(OutputStream outputStream, int capacity) {
         _bytes = new byte[capacity];
         _outputStream = outputStream;
     }
 
-    protected OutputStream getOutput(){
-		return _outputStream;
-	}
-    
+    /**
+     * Closes and {@link #reset resets} this writer for reuse.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    public void close() throws IOException {
+        if (_outputStream != null) {
+            flushBuffer();
+            _outputStream.close();
+            reset();
+        }
+    }
+
+    /**
+     * Flushes the stream.  If the stream has saved any characters from the
+     * various write() methods in a buffer, write them immediately to their
+     * intended destination.  Then, if that destination is another character or
+     * byte stream, flush it.  Thus one flush() invocation will flush all the
+     * buffers in a chain of Writers and OutputStreams.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    public void flush() throws IOException {
+        flushBuffer();
+        _outputStream.flush();
+    }
+
+    /**
+     * Flushes the internal bytes buffer.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    private void flushBuffer() throws IOException {
+        if (_outputStream == null)
+            throw new IOException("Stream closed");
+        _outputStream.write(_bytes, 0, _index);
+        _index = 0;
+    }
+
+    protected OutputStream getOutput() {
+        return _outputStream;
+    }
+
     /**
      * Sets the output stream to use for writing until this writer is closed.
      * For example:[code]
-     *     Writer writer = new UTF8StreamWriter().setOutputStream(out);
+     * Writer writer = new UTF8StreamWriter().setOutputStream(out);
      * [/code] is equivalent but writes faster than [code]
-     *     Writer writer = new java.io.OutputStreamWriter(out, "UTF-8");
+     * Writer writer = new java.io.OutputStreamWriter(out, "UTF-8");
      * [/code]
      *
-     * @param  out the output stream.
+     * @param out the output stream.
      * @return this UTF-8 writer.
      * @throws IllegalStateException if this writer is being reused and
-     *         it has not been {@link #close closed} or {@link #reset reset}.
+     *                               it has not been {@link #close closed} or {@link #reset reset}.
      */
     public UTF8StreamWriter setOutput(OutputStream out) {
         if (_outputStream != null)
@@ -113,17 +151,23 @@ public final class UTF8StreamWriter extends Writer {
         return this;
     }
 
+    public void reset() {
+        _highSurrogate = 0;
+        _index = 0;
+        _outputStream = null;
+    }
+
     /**
      * Writes a single character. This method supports 16-bits
      * character surrogates.
      *
-     * @param  c <code>char</code> the character to be written (possibly
-     *        a surrogate).
+     * @param c <code>char</code> the character to be written (possibly
+     *          a surrogate).
      * @throws IOException if an I/O error occurs.
      */
     public void write(char c) throws IOException {
-    	if(_outputStream == null)
-    		throw new IOException("Writer closed");
+        if (_outputStream == null)
+            throw new IOException("Writer closed");
         if ((c < 0xd800) || (c > 0xdfff)) {
             write((int) c);
         } else if (c < 0xdc00) { // High surrogate.
@@ -135,17 +179,15 @@ public final class UTF8StreamWriter extends Writer {
         }
     }
 
-    private char _highSurrogate;
-
     /**
      * Writes a character given its 31-bits Unicode.
      *
-     * @param  code the 31 bits Unicode of the character to be written.
+     * @param code the 31 bits Unicode of the character to be written.
      * @throws IOException if an I/O error occurs.
      */
     public void write(int code) throws IOException {
-    	if(_outputStream == null)
-    		throw new IOException("Writer closed");
+        if (_outputStream == null)
+            throw new IOException("Writer closed");
         if ((code & 0xffffff80) == 0) {
             _bytes[_index] = (byte) code;
             if (++_index >= _bytes.length) {
@@ -153,6 +195,79 @@ public final class UTF8StreamWriter extends Writer {
             }
         } else { // Writes more than one byte.
             write2(code);
+        }
+    }
+
+    /**
+     * Writes a portion of an array of characters.
+     *
+     * @param cbuf the array of characters.
+     * @param off  the offset from which to start writing characters.
+     * @param len  the number of characters to write.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void write(char cbuf[], int off, int len) throws IOException {
+        if (_outputStream == null)
+            throw new IOException("Writer closed");
+        final int off_plus_len = off + len;
+        for (int i = off; i < off_plus_len; ) {
+            char c = cbuf[i++];
+            if (c < 0x80) {
+                _bytes[_index] = (byte) c;
+                if (++_index >= _bytes.length) {
+                    flushBuffer();
+                }
+            } else {
+                write(c);
+            }
+        }
+    }
+
+    /**
+     * Writes a portion of a string.
+     *
+     * @param str a String.
+     * @param off the offset from which to start writing characters.
+     * @param len the number of characters to write.
+     * @throws IOException if an I/O error occurs
+     */
+    public void write(String str, int off, int len) throws IOException {
+        if (_outputStream == null)
+            throw new IOException("Writer closed");
+        final int off_plus_len = off + len;
+        for (int i = off; i < off_plus_len; ) {
+            char c = str.charAt(i++);
+            if (c < 0x80) {
+                _bytes[_index] = (byte) c;
+                if (++_index >= _bytes.length) {
+                    flushBuffer();
+                }
+            } else {
+                write(c);
+            }
+        }
+    }
+
+    /**
+     * Writes the specified character sequence.
+     *
+     * @param csq the character sequence.
+     * @throws IOException if an I/O error occurs
+     */
+    public void write(CharSequence csq) throws IOException {
+        if (_outputStream == null)
+            throw new IOException("Writer closed");
+        final int length = csq.length();
+        for (int i = 0; i < length; ) {
+            char c = csq.charAt(i++);
+            if (c < 0x80) {
+                _bytes[_index] = (byte) c;
+                if (++_index >= _bytes.length) {
+                    flushBuffer();
+                }
+            } else {
+                write(c);
+            }
         }
     }
 
@@ -248,122 +363,4 @@ public final class UTF8StreamWriter extends Writer {
         }
     }
 
-    /**
-     * Writes a portion of an array of characters.
-     *
-     * @param  cbuf the array of characters.
-     * @param  off the offset from which to start writing characters.
-     * @param  len the number of characters to write.
-     * @throws IOException if an I/O error occurs.
-     */
-    public void write(char cbuf[], int off, int len) throws IOException {
-    	if(_outputStream == null)
-    		throw new IOException("Writer closed");
-        final int off_plus_len = off + len;
-        for (int i = off; i < off_plus_len;) {
-            char c = cbuf[i++];
-            if (c < 0x80) {
-                _bytes[_index] = (byte) c;
-                if (++_index >= _bytes.length) {
-                    flushBuffer();
-                }
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Writes a portion of a string.
-     *
-     * @param  str a String.
-     * @param  off the offset from which to start writing characters.
-     * @param  len the number of characters to write.
-     * @throws IOException if an I/O error occurs
-     */
-    public void write(String str, int off, int len) throws IOException {
-    	if(_outputStream == null)
-    		throw new IOException("Writer closed");
-        final int off_plus_len = off + len;
-        for (int i = off; i < off_plus_len;) {
-            char c = str.charAt(i++);
-            if (c < 0x80) {
-                _bytes[_index] = (byte) c;
-                if (++_index >= _bytes.length) {
-                    flushBuffer();
-                }
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Writes the specified character sequence.
-     *
-     * @param  csq the character sequence.
-     * @throws IOException if an I/O error occurs
-     */
-    public void write(CharSequence csq) throws IOException {
-    	if(_outputStream == null)
-    		throw new IOException("Writer closed");
-        final int length = csq.length();
-        for (int i = 0; i < length;) {
-            char c = csq.charAt(i++);
-            if (c < 0x80) {
-                _bytes[_index] = (byte) c;
-                if (++_index >= _bytes.length) {
-                    flushBuffer();
-                }
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Flushes the stream.  If the stream has saved any characters from the
-     * various write() methods in a buffer, write them immediately to their
-     * intended destination.  Then, if that destination is another character or
-     * byte stream, flush it.  Thus one flush() invocation will flush all the
-     * buffers in a chain of Writers and OutputStreams.
-     *
-     * @throws IOException if an I/O error occurs.
-     */
-    public void flush() throws IOException {
-        flushBuffer();
-        _outputStream.flush();
-    }
-
-    /**
-     * Closes and {@link #reset resets} this writer for reuse.
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    public void close() throws IOException {
-        if (_outputStream != null) {
-            flushBuffer();
-            _outputStream.close();
-            reset();
-        }
-    }
-
-    /**
-     * Flushes the internal bytes buffer.
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    private void flushBuffer() throws IOException {
-        if (_outputStream == null)
-            throw new IOException("Stream closed");
-        _outputStream.write(_bytes, 0, _index);
-        _index = 0;
-    }
-
-    public void reset() {
-        _highSurrogate = 0;
-        _index = 0;
-        _outputStream = null;
-    }
-
- }
+}

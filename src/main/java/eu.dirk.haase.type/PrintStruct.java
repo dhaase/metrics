@@ -5,13 +5,6 @@ import java.lang.reflect.Field;
 public class PrintStruct {
 
 
-    public static void print(int indent, Struct struct) throws IllegalAccessException {
-        String indentStr = indentSpace(indent);
-        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getAbsolutePosition(struct.getByteBuffer()));
-        members(++indent, struct);
-        System.out.println(indentStr + "} ");
-    }
-
     private static String indentSpace(int indent) {
         String indentStr = "";
         for (int i = 0; indent > i; ++i) {
@@ -19,7 +12,6 @@ public class PrintStruct {
         }
         return indentStr;
     }
-
 
     public static void members(int indent, Struct struct) throws IllegalAccessException {
         int offset = struct.getAbsolutePosition(struct.getByteBuffer());
@@ -38,6 +30,13 @@ public class PrintStruct {
                 System.out.println(indentStr + f.getName() + ": " + (offset + member.memberOffset));
             }
         }
+    }
+
+    public static void print(int indent, Struct struct) throws IllegalAccessException {
+        String indentStr = indentSpace(indent);
+        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getAbsolutePosition(struct.getByteBuffer()));
+        members(++indent, struct);
+        System.out.println(indentStr + "} ");
     }
 
 

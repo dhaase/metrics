@@ -2,7 +2,7 @@
  * Javolution - Java(TM) Solution for Real-Time and Embedded Systems
  * Copyright (C) 2012 - Javolution (http://javolution.org/)
  * All rights reserved.
- * 
+ *
  * Permission to use, copy, modify, and distribute this software is
  * freely granted, provided that this notice is preserved.
  */
@@ -15,24 +15,24 @@ import java.nio.ByteBuffer;
 
 /**
  * <p> A UTF-8 <code>java.nio.ByteBuffer</code> writer.</p>
- *
+ * <p>
  * <p> This writer supports surrogate <code>char</code> pairs (representing
- *     characters in the range [U+10000 .. U+10FFFF]). It can also be used
- *     to write characters from their unicodes (31 bits) directly
- *     (ref. {@link #write(int)}).</p>
- *
+ * characters in the range [U+10000 .. U+10FFFF]). It can also be used
+ * to write characters from their unicodes (31 bits) directly
+ * (ref. {@link #write(int)}).</p>
+ * <p>
  * <p> Instances of this class can be reused for different output streams
- *     and can be part of a higher level component (e.g. serializer) in order
- *     to avoid dynamic buffer allocation when the destination output changes.
- *     Also wrapping using a <code>java.io.BufferedWriter</code> is unnescessary
- *     as instances of this class embed their own data buffers.</p>
- * 
+ * and can be part of a higher level component (e.g. serializer) in order
+ * to avoid dynamic buffer allocation when the destination output changes.
+ * Also wrapping using a <code>java.io.BufferedWriter</code> is unnescessary
+ * as instances of this class embed their own data buffers.</p>
+ * <p>
  * <p> Note: This writer is unsynchronized and always produces well-formed
- *           UTF-8 sequences.</p>
+ * UTF-8 sequences.</p>
  *
- * @author  <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
+ * @author <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
  * @version 2.0, December 9, 2004
- * @see     UTF8ByteBufferReader
+ * @see UTF8ByteBufferReader
  */
 public final class UTF8ByteBufferWriter extends Writer {
 
@@ -40,32 +40,57 @@ public final class UTF8ByteBufferWriter extends Writer {
      * Holds the byte buffer destination.
      */
     private ByteBuffer _byteBuffer;
+    private char _highSurrogate;
 
     /**
      * Default constructor.
      */
-    public UTF8ByteBufferWriter() {}
+    public UTF8ByteBufferWriter() {
+    }
 
     /**
-	 * Constructor to Provide a Byte Buffer on Initialization
-	 *
-	 * @param byteBuffer Byte Buffer to use for Writing
-	 */
-	public UTF8ByteBufferWriter(final ByteBuffer byteBuffer) {
-		_byteBuffer = byteBuffer;
-	}
-	
-	protected ByteBuffer getOutput(){
-		return _byteBuffer;
-	}
-	
+     * Constructor to Provide a Byte Buffer on Initialization
+     *
+     * @param byteBuffer Byte Buffer to use for Writing
+     */
+    public UTF8ByteBufferWriter(final ByteBuffer byteBuffer) {
+        _byteBuffer = byteBuffer;
+    }
+
+    /**
+     * Closes and {@link #reset resets} this writer for reuse.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    public void close() throws IOException {
+        if (_byteBuffer != null) {
+            reset();
+        }
+    }
+
+    /**
+     * Flushes the stream (this method has no effect, the data is
+     * always directly written to the <code>ByteBuffer</code>).
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    public void flush() throws IOException {
+        if (_byteBuffer == null) {
+            throw new IOException("Writer closed");
+        }
+    }
+
+    protected ByteBuffer getOutput() {
+        return _byteBuffer;
+    }
+
     /**
      * Sets the byte buffer to use for writing until this writer is closed.
      *
-     * @param  byteBuffer the destination byte buffer.
+     * @param byteBuffer the destination byte buffer.
      * @return this UTF-8 writer.
      * @throws IllegalStateException if this writer is being reused and
-     *         it has not been {@link #close closed} or {@link #reset reset}.
+     *                               it has not been {@link #close closed} or {@link #reset reset}.
      */
     public UTF8ByteBufferWriter setOutput(ByteBuffer byteBuffer) {
         if (_byteBuffer != null)
@@ -74,17 +99,23 @@ public final class UTF8ByteBufferWriter extends Writer {
         return this;
     }
 
+    // Implements Reusable.
+    public void reset() {
+        _byteBuffer = null;
+        _highSurrogate = 0;
+    }
+
     /**
      * Writes a single character. This method supports 16-bits
      * character surrogates.
      *
-     * @param  c <code>char</code> the character to be written (possibly
-     *        a surrogate).
+     * @param c <code>char</code> the character to be written (possibly
+     *          a surrogate).
      * @throws IOException if an I/O error occurs.
      */
     public void write(char c) throws IOException {
-    	if(_byteBuffer == null)
-    		throw new IOException("Writer closed");
+        if (_byteBuffer == null)
+            throw new IOException("Writer closed");
         if ((c < 0xd800) || (c > 0xdfff)) {
             write((int) c);
         } else if (c < 0xdc00) { // High surrogate.
@@ -96,21 +127,83 @@ public final class UTF8ByteBufferWriter extends Writer {
         }
     }
 
-    private char _highSurrogate;
-
     /**
      * Writes a character given its 31-bits Unicode.
      *
-     * @param  code the 31 bits Unicode of the character to be written.
+     * @param code the 31 bits Unicode of the character to be written.
      * @throws IOException if an I/O error occurs.
      */
     public void write(int code) throws IOException {
-    	if(_byteBuffer == null)
-    		throw new IOException("Writer closed");
+        if (_byteBuffer == null)
+            throw new IOException("Writer closed");
         if ((code & 0xffffff80) == 0) {
             _byteBuffer.put((byte) code);
         } else { // Writes more than one byte.
             write2(code);
+        }
+    }
+
+    /**
+     * Writes a portion of an array of characters.
+     *
+     * @param cbuf the array of characters.
+     * @param off  the offset from which to start writing characters.
+     * @param len  the number of characters to write.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void write(char cbuf[], int off, int len) throws IOException {
+        if (_byteBuffer == null)
+            throw new IOException("Writer closed");
+        final int off_plus_len = off + len;
+        for (int i = off; i < off_plus_len; ) {
+            char c = cbuf[i++];
+            if (c < 0x80) {
+                _byteBuffer.put((byte) c);
+            } else {
+                write(c);
+            }
+        }
+    }
+
+    /**
+     * Writes a portion of a string.
+     *
+     * @param str a String.
+     * @param off the offset from which to start writing characters.
+     * @param len the number of characters to write.
+     * @throws IOException if an I/O error occurs
+     */
+    public void write(String str, int off, int len) throws IOException {
+        if (_byteBuffer == null)
+            throw new IOException("Writer closed");
+        final int off_plus_len = off + len;
+        for (int i = off; i < off_plus_len; ) {
+            char c = str.charAt(i++);
+            if (c < 0x80) {
+                _byteBuffer.put((byte) c);
+            } else {
+                write(c);
+            }
+        }
+    }
+
+    /**
+     * Writes the specified character sequence.
+     *
+     * @param csq the character sequence.
+     * @throws IOException if an I/O error occurs
+     */
+    public void write(CharSequence csq) throws IOException {
+        if (_byteBuffer == null)
+            throw new IOException("Writer closed");
+        final int length = csq.length();
+        for (int i = 0; i < length; ) {
+            char c = csq.charAt(i++);
+            if (c < 0x80) {
+                _byteBuffer.put((byte) c);
+            } else {
+                write(c);
+            }
         }
     }
 
@@ -144,97 +237,6 @@ public final class UTF8ByteBufferWriter extends Writer {
             throw new CharConversionException("Illegal character U+"
                     + Integer.toHexString(c));
         }
-    }
-
-    /**
-     * Writes a portion of an array of characters.
-     *
-     * @param  cbuf the array of characters.
-     * @param  off the offset from which to start writing characters.
-     * @param  len the number of characters to write.
-     * @throws IOException if an I/O error occurs.
-     */
-    public void write(char cbuf[], int off, int len) throws IOException {
-    	if(_byteBuffer == null)
-    		throw new IOException("Writer closed");
-        final int off_plus_len = off + len;
-        for (int i = off; i < off_plus_len;) {
-            char c = cbuf[i++];
-            if (c < 0x80) {
-                _byteBuffer.put((byte) c);
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Writes a portion of a string.
-     *
-     * @param  str a String.
-     * @param  off the offset from which to start writing characters.
-     * @param  len the number of characters to write.
-     * @throws IOException if an I/O error occurs
-     */
-    public void write(String str, int off, int len) throws IOException {
-    	if(_byteBuffer == null)
-    		throw new IOException("Writer closed");
-        final int off_plus_len = off + len;
-        for (int i = off; i < off_plus_len;) {
-            char c = str.charAt(i++);
-            if (c < 0x80) {
-                _byteBuffer.put((byte) c);
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Writes the specified character sequence.
-     *
-     * @param  csq the character sequence.
-     * @throws IOException if an I/O error occurs
-     */
-    public void write(CharSequence csq) throws IOException {
-    	if(_byteBuffer == null)
-    		throw new IOException("Writer closed");
-        final int length = csq.length();
-        for (int i = 0; i < length;) {
-            char c = csq.charAt(i++);
-            if (c < 0x80) {
-                _byteBuffer.put((byte) c);
-            } else {
-                write(c);
-            }
-        }
-    }
-
-    /**
-     * Flushes the stream (this method has no effect, the data is 
-     * always directly written to the <code>ByteBuffer</code>).
-     *
-     * @throws IOException if an I/O error occurs.
-     */
-    public void flush() throws IOException {
-        if (_byteBuffer == null) { throw new IOException("Writer closed"); }
-    }
-
-    /**
-     * Closes and {@link #reset resets} this writer for reuse.
-     *
-     * @throws IOException if an I/O error occurs
-     */
-    public void close() throws IOException {
-        if (_byteBuffer != null) {
-            reset();
-        }
-    }
-
-    // Implements Reusable.
-    public void reset() {
-        _byteBuffer = null;
-        _highSurrogate = 0;
     }
 
 

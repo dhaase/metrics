@@ -2,7 +2,7 @@
  * Javolution - Java(TM) Solution for Real-Time and Embedded Systems
  * Copyright (C) 2012 - Javolution (http://javolution.org/)
  * All rights reserved.
- * 
+ *
  * Permission to use, copy, modify, and distribute this software is
  * freely granted, provided that this notice is preserved.
  */
@@ -16,25 +16,25 @@ import java.nio.ByteBuffer;
 
 /**
  * <p> A UTF-8 <code>java.nio.ByteBuffer</code> reader.
- *     </p>
- *
- * <p> This reader can be used for efficient decoding of native byte 
- *     buffers (e.g. <code>MappedByteBuffer</code>), high-performance 
- *     messaging (no intermediate buffer), etc.</p>
- *     
+ * </p>
+ * <p>
+ * <p> This reader can be used for efficient decoding of native byte
+ * buffers (e.g. <code>MappedByteBuffer</code>), high-performance
+ * messaging (no intermediate buffer), etc.</p>
+ * <p>
  * <p> This reader supports surrogate <code>char</code> pairs (representing
- *     characters in the range [U+10000 .. U+10FFFF]). It can also be used
- *     to read characters unicodes (31 bits) directly
- *     (ref. {@link #read()}).</p>
- *
+ * characters in the range [U+10000 .. U+10FFFF]). It can also be used
+ * to read characters unicodes (31 bits) directly
+ * (ref. {@link #read()}).</p>
+ * <p>
  * <p> Each invocation of one of the <code>read()</code> methods may cause one
- *     or more bytes to be read from the underlying byte buffer.
- *     The end of stream is reached when the byte buffer position and limit
- *     coincide.</p>
+ * or more bytes to be read from the underlying byte buffer.
+ * The end of stream is reached when the byte buffer position and limit
+ * coincide.</p>
  *
- * @author  <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
+ * @author <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
  * @version 2.0, December 9, 2004
- * @see     UTF8ByteBufferWriter
+ * @see UTF8ByteBufferWriter
  */
 public final class UTF8ByteBufferReader extends Reader {
 
@@ -42,50 +42,22 @@ public final class UTF8ByteBufferReader extends Reader {
      * Holds the byte buffer source.
      */
     private ByteBuffer _byteBuffer;
+    private int _code;
+    private int _moreBytes;
 
     /**
      * Default constructor.
      */
-    public UTF8ByteBufferReader() {}
-    
+    public UTF8ByteBufferReader() {
+    }
+
     /**
      * Constructor for Initializing to Read from the Specified Byte Buffer
-     * 
+     *
      * @param byteBuffer ByteBuffer to Read From
      */
     public UTF8ByteBufferReader(ByteBuffer byteBuffer) {
-    	_byteBuffer = byteBuffer;
-    }
-
-    /**
-     * Sets the <code>ByteBuffer</code> to use for reading available bytes
-     * from current buffer position.
-     *
-     * @param  byteBuffer the <code>ByteBuffer</code> source.
-     * @return this UTF-8 reader.
-     * @throws IllegalStateException if this reader is being reused and
-     *         it has not been {@link #close closed} or {@link #reset reset}.
-     */
-    public UTF8ByteBufferReader setInput(ByteBuffer byteBuffer) {
-        if (_byteBuffer != null)
-            throw new IllegalStateException("Reader not closed or reset");
         _byteBuffer = byteBuffer;
-        return this;
-    }
-
-    /**
-     * Indicates if this stream is ready to be read.
-     *
-     * @return <code>true</code> if the byte buffer has remaining bytes to 
-     *         read; <code>false</code> otherwise.
-     * @throws IOException if an I/O error occurs.
-     */
-    public boolean ready() throws IOException {
-        if (_byteBuffer != null) {
-            return _byteBuffer.hasRemaining();
-        } else {
-            throw new IOException("Reader closed");
-        }
     }
 
     /**
@@ -103,10 +75,10 @@ public final class UTF8ByteBufferReader extends Reader {
      * Reads a single character.  This method does not block, <code>-1</code>
      * is returned if the buffer's limit has been reached.
      *
-     * @return the 31-bits Unicode of the character read, or -1 if there is 
-     *         no more remaining bytes to be read.
+     * @return the 31-bits Unicode of the character read, or -1 if there is
+     * no more remaining bytes to be read.
      * @throws IOException if an I/O error occurs (e.g. incomplete
-     *         character sequence being read).
+     *                     character sequence being read).
      */
     public int read() throws IOException {
         if (_byteBuffer != null) {
@@ -118,6 +90,93 @@ public final class UTF8ByteBufferReader extends Reader {
             }
         } else {
             throw new IOException("Reader closed");
+        }
+    }
+
+    /**
+     * Reads characters into a portion of an array.  This method does not
+     * block.
+     * <p>
+     * <p> Note: Characters between U+10000 and U+10FFFF are represented
+     * by surrogate pairs (two <code>char</code>).</p>
+     *
+     * @param cbuf the destination buffer.
+     * @param off  the offset at which to start storing characters.
+     * @param len  the maximum number of characters to read
+     * @return the number of characters read, or -1 if there is no more
+     * byte remaining.
+     * @throws IOException if an I/O error occurs.
+     */
+    public int read(char cbuf[], int off, int len) throws IOException {
+        if (_byteBuffer == null)
+            throw new IOException("Reader closed");
+        final int off_plus_len = off + len;
+        int remaining = _byteBuffer.remaining();
+        if (remaining <= 0)
+            return -1;
+        for (int i = off; i < off_plus_len; ) {
+            if (remaining-- > 0) {
+                byte b = _byteBuffer.get();
+                if (b >= 0) {
+                    cbuf[i++] = (char) b; // Most common case.
+                } else {
+                    if (i < off_plus_len - 1) { // Up to two 'char' can be read.
+                        int code = read2(b);
+                        remaining = _byteBuffer.remaining(); // Recalculates.
+                        if (code < 0x10000) {
+                            cbuf[i++] = (char) code;
+                        } else if (code <= 0x10ffff) { // Surrogates.
+                            cbuf[i++] = (char) (((code - 0x10000) >> 10) + 0xd800);
+                            cbuf[i++] = (char) (((code - 0x10000) & 0x3ff) + 0xdc00);
+                        } else {
+                            throw new CharConversionException(
+                                    "Cannot convert U+"
+                                            + Integer.toHexString(code)
+                                            + " to char (code greater than U+10FFFF)");
+                        }
+                    } else { // Not enough space in destination (go back).
+                        _byteBuffer.position(_byteBuffer.position() - 1);
+                        remaining++;
+                        return i - off;
+                    }
+                }
+            } else {
+                return i - off;
+            }
+        }
+        return len;
+    }
+
+    /**
+     * Reads characters into the specified appendable. This method does not
+     * block.
+     * <p>
+     * <p> Note: Characters between U+10000 and U+10FFFF are represented
+     * by surrogate pairs (two <code>char</code>).</p>
+     *
+     * @param dest the destination buffer.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void read(Appendable dest) throws IOException {
+        if (_byteBuffer == null)
+            throw new IOException("Reader closed");
+        while (_byteBuffer.hasRemaining()) {
+            byte b = _byteBuffer.get();
+            if (b >= 0) {
+                dest.append((char) b); // Most common case.
+            } else {
+                int code = read2(b);
+                if (code < 0x10000) {
+                    dest.append((char) code);
+                } else if (code <= 0x10ffff) { // Surrogates.
+                    dest.append((char) (((code - 0x10000) >> 10) + 0xd800));
+                    dest.append((char) (((code - 0x10000) & 0x3ff) + 0xdc00));
+                } else {
+                    throw new CharConversionException("Cannot convert U+"
+                            + Integer.toHexString(code)
+                            + " to char (code greater than U+10FFFF)");
+                }
+            }
         }
     }
 
@@ -169,94 +228,18 @@ public final class UTF8ByteBufferReader extends Reader {
         }
     }
 
-    private int _code;
-
-    private int _moreBytes;
-
     /**
-     * Reads characters into a portion of an array.  This method does not 
-     * block.
+     * Indicates if this stream is ready to be read.
      *
-     * <p> Note: Characters between U+10000 and U+10FFFF are represented
-     *     by surrogate pairs (two <code>char</code>).</p>
-     *
-     * @param  cbuf the destination buffer.
-     * @param  off the offset at which to start storing characters.
-     * @param  len the maximum number of characters to read
-     * @return the number of characters read, or -1 if there is no more 
-     *         byte remaining.
+     * @return <code>true</code> if the byte buffer has remaining bytes to
+     * read; <code>false</code> otherwise.
      * @throws IOException if an I/O error occurs.
      */
-    public int read(char cbuf[], int off, int len) throws IOException {
-        if (_byteBuffer == null)
+    public boolean ready() throws IOException {
+        if (_byteBuffer != null) {
+            return _byteBuffer.hasRemaining();
+        } else {
             throw new IOException("Reader closed");
-        final int off_plus_len = off + len;
-        int remaining = _byteBuffer.remaining();
-        if (remaining <= 0)
-            return -1;
-        for (int i = off; i < off_plus_len;) {
-            if (remaining-- > 0) {
-                byte b = _byteBuffer.get();
-                if (b >= 0) {
-                    cbuf[i++] = (char) b; // Most common case.
-                } else {
-                    if (i < off_plus_len - 1) { // Up to two 'char' can be read.
-                        int code = read2(b);
-                        remaining = _byteBuffer.remaining(); // Recalculates.
-                        if (code < 0x10000) {
-                            cbuf[i++] = (char) code;
-                        } else if (code <= 0x10ffff) { // Surrogates.
-                            cbuf[i++] = (char) (((code - 0x10000) >> 10) + 0xd800);
-                            cbuf[i++] = (char) (((code - 0x10000) & 0x3ff) + 0xdc00);
-                        } else {
-                            throw new CharConversionException(
-                                    "Cannot convert U+"
-                                            + Integer.toHexString(code)
-                                            + " to char (code greater than U+10FFFF)");
-                        }
-                    } else { // Not enough space in destination (go back).
-                        _byteBuffer.position(_byteBuffer.position() - 1);
-                        remaining++;
-                        return i - off;
-                    }
-                }
-            } else {
-                return i - off;
-            }
-        }
-        return len;
-    }
-
-    /**
-     * Reads characters into the specified appendable. This method does not 
-     * block.
-     *
-     * <p> Note: Characters between U+10000 and U+10FFFF are represented
-     *     by surrogate pairs (two <code>char</code>).</p>
-     *
-     * @param  dest the destination buffer.
-     * @throws IOException if an I/O error occurs.
-     */
-    public void read(Appendable dest) throws IOException {
-        if (_byteBuffer == null)
-            throw new IOException("Reader closed");
-        while (_byteBuffer.hasRemaining()) {
-            byte b = _byteBuffer.get();
-            if (b >= 0) {
-                dest.append((char) b); // Most common case.
-            } else {
-                int code = read2(b);
-                if (code < 0x10000) {
-                    dest.append((char) code);
-                } else if (code <= 0x10ffff) { // Surrogates.
-                    dest.append((char) (((code - 0x10000) >> 10) + 0xd800));
-                    dest.append((char) (((code - 0x10000) & 0x3ff) + 0xdc00));
-                } else {
-                    throw new CharConversionException("Cannot convert U+"
-                            + Integer.toHexString(code)
-                            + " to char (code greater than U+10FFFF)");
-                }
-            }
         }
     }
 
@@ -264,6 +247,22 @@ public final class UTF8ByteBufferReader extends Reader {
         _byteBuffer = null;
         _code = 0;
         _moreBytes = 0;
+    }
+
+    /**
+     * Sets the <code>ByteBuffer</code> to use for reading available bytes
+     * from current buffer position.
+     *
+     * @param byteBuffer the <code>ByteBuffer</code> source.
+     * @return this UTF-8 reader.
+     * @throws IllegalStateException if this reader is being reused and
+     *                               it has not been {@link #close closed} or {@link #reset reset}.
+     */
+    public UTF8ByteBufferReader setInput(ByteBuffer byteBuffer) {
+        if (_byteBuffer != null)
+            throw new IllegalStateException("Reader not closed or reset");
+        _byteBuffer = byteBuffer;
+        return this;
     }
 
 
