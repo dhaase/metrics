@@ -29,7 +29,7 @@ public class StructScalarTypeTest {
         int unsigned16 = Short.MAX_VALUE - 1;
         long unsigned32 = Integer.MAX_VALUE - 1;
         byte utfChar8 = 'A';
-        char utfChar16 = 'A';
+        char utfChar16 = '\u4E0D';
 
         byteBuffer.position(0);
 
@@ -127,7 +127,7 @@ public class StructScalarTypeTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // test
-        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer,0);
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 0);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class StructScalarTypeTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // test
-        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer,0);
+        test_packet_struct_that_member_values_are_correct_read(scalarStruct, byteBuffer, 0);
     }
 
     private void test_packet_struct_that_member_values_are_correct_with_roundtrip(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer, int structOffset) {
@@ -156,7 +156,7 @@ public class StructScalarTypeTest {
         int unsigned16 = Short.MAX_VALUE - 1;
         long unsigned32 = Integer.MAX_VALUE - 1;
         byte utfChar8 = 'A';
-        char utfChar16 = 'A';
+        char utfChar16 = '\u4E0D';
 
         final byte prefix = 12;
         byteBuffer.position(0);
@@ -280,7 +280,7 @@ public class StructScalarTypeTest {
         int unsigned16 = Short.MAX_VALUE - 1;
         long unsigned32 = Integer.MAX_VALUE - 1;
         byte utfChar8 = 'A';
-        char utfChar16 = 'A';
+        char utfChar16 = '\u4E0D';
 
         final byte prefix = 12;
         byteBuffer.position(0);
@@ -351,7 +351,7 @@ public class StructScalarTypeTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer,0);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0);
     }
 
     @Test
@@ -361,7 +361,7 @@ public class StructScalarTypeTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer,23);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 23);
     }
 
     @Test
@@ -381,7 +381,7 @@ public class StructScalarTypeTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer,0);
+        test_packet_struct_that_member_values_are_correct_written(scalarStruct, byteBuffer, 0);
     }
 
     @Test
@@ -580,9 +580,6 @@ public class StructScalarTypeTest {
 
     static class MyScalarPackedStruct extends MyAbstractScalarStruct {
 
-        public boolean isPacked() {
-            return true;
-        }
 
     }
 
@@ -592,9 +589,6 @@ public class StructScalarTypeTest {
             super(ByteOrder.BIG_ENDIAN);
         }
 
-        public boolean isPacked() {
-            return true;
-        }
 
     }
 
@@ -604,9 +598,6 @@ public class StructScalarTypeTest {
             super(ByteOrder.LITTLE_ENDIAN);
         }
 
-        public boolean isPacked() {
-            return true;
-        }
 
     }
 

@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -956,8 +957,11 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class BitField extends AbstractMember {
 
+        private final BitSet bitSet;
+
         public BitField(final int nbrOfBits) {
             super(nbrOfBits, 0);
+            this.bitSet = new BitSet(nbrOfBits);
         }
 
         public final byte byteValue() {
@@ -1430,8 +1434,8 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class UTF8String extends AbstractMember {
 
-        private final UTF8ByteBufferReader _reader = new UTF8ByteBufferReader();
-        private final UTF8ByteBufferWriter _writer = new UTF8ByteBufferWriter();
+        private final UTF8ByteBufferReader reader = new UTF8ByteBufferReader();
+        private final UTF8ByteBufferWriter writer = new UTF8ByteBufferWriter();
         private final int length;
 
         public UTF8String(final int length) {
@@ -1443,9 +1447,9 @@ public abstract class Struct implements PositionUpdatable {
             final StringBuilder tmp = new StringBuilder();
             try {
                 currByteBuffer.position(this.memberAbsolutePosition);
-                _reader.setInput(currByteBuffer);
+                reader.setInput(currByteBuffer);
                 for (int i = 0; i < length; i++) {
-                    char c = (char) _reader.read();
+                    char c = (char) reader.read();
                     if (c == 0) { // Null terminator.
                         return tmp.toString();
                     } else {
@@ -1456,7 +1460,7 @@ public abstract class Struct implements PositionUpdatable {
             } catch (IOException e) { // Should never happen.
                 throw new Error(e.getMessage());
             } finally {
-                _reader.reset();
+                reader.reset();
             }
         }
 
@@ -1467,19 +1471,19 @@ public abstract class Struct implements PositionUpdatable {
         public final void set(final CharSequence string) {
             try {
                 currByteBuffer.position(this.memberAbsolutePosition);
-                _writer.setOutput(currByteBuffer);
+                writer.setOutput(currByteBuffer);
                 if (string.length() < length) {
-                    _writer.write(string);
-                    _writer.write(0); // Marks end of string.
+                    writer.write(string);
+                    writer.write(0); // Marks end of string.
                 } else if (string.length() > length) { // Truncates.
-                    _writer.write(string.subSequence(0, length));
+                    writer.write(string.subSequence(0, length));
                 } else { // Exact same length.
-                    _writer.write(string);
+                    writer.write(string);
                 }
             } catch (IOException e) { // Should never happen.
                 throw new Error(e.getMessage());
             } finally {
-                _writer.reset();
+                writer.reset();
             }
         }
 
