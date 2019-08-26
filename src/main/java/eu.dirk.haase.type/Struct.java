@@ -16,6 +16,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p> Equivalent to a  <code>C/C++ struct</code>; this class confers
@@ -496,6 +497,18 @@ public abstract class Struct implements PositionUpdatable {
         }
     }
 
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        } else if (o == null || getClass() != o.getClass()) {
+            return false;
+        } else {
+            final Struct struct = (Struct) o;
+            return Objects.equals(memberList, struct.memberList);
+        }
+    }
+
     /**
      * Returns the absolute byte position of this struct within its associated
      * {@link #currByteBuffer byte buffer}.
@@ -515,6 +528,11 @@ public abstract class Struct implements PositionUpdatable {
         } else {
             this.structOffset = offset;
         }
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(memberList);
     }
 
     /**
@@ -563,7 +581,7 @@ public abstract class Struct implements PositionUpdatable {
         if (struct.outerStruct != null) {
             throw new IllegalArgumentException("struct: Already an inner struct");
         }
-        final Member inner = new Member(struct.size() << 3); // Update indexes.
+        final StructMember inner = new StructMember(struct.size() << 3); // Update indexes.
         struct.outerStruct = this;
         struct.structOffset = inner.memberOffset;
         return struct;
@@ -729,6 +747,7 @@ public abstract class Struct implements PositionUpdatable {
      * @return a hexadecimal representation of the bytes content for this
      * struct.
      */
+    @Override
     public final String toString() {
         final StringBuilder tmp = new StringBuilder();
         final int size = size();
@@ -955,7 +974,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents an arbitrary size (unsigned) bit field with
      * no word size constraint (they can straddle words boundaries).
      */
-    public final class BitField extends AbstractMember {
+    public final class BitField extends NonScalarMember {
 
         private final BitSet bitSet;
 
@@ -985,6 +1004,7 @@ public abstract class Struct implements PositionUpdatable {
             return (short) longValue();
         }
 
+        @Override
         public final String toString() {
             return String.valueOf(longValue());
         }
@@ -1013,8 +1033,9 @@ public abstract class Struct implements PositionUpdatable {
             setShort(boolValue);
         }
 
-        public String toString() {
-            return String.valueOf(this.get());
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1041,8 +1062,9 @@ public abstract class Struct implements PositionUpdatable {
             setInt(boolValue);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1069,8 +1091,10 @@ public abstract class Struct implements PositionUpdatable {
             setLong(boolValue);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1097,8 +1121,9 @@ public abstract class Struct implements PositionUpdatable {
             setByte(boolValue);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1124,8 +1149,10 @@ public abstract class Struct implements PositionUpdatable {
             setShort((short) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1151,8 +1178,10 @@ public abstract class Struct implements PositionUpdatable {
             setInt(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1178,8 +1207,10 @@ public abstract class Struct implements PositionUpdatable {
             setLong(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1205,8 +1236,10 @@ public abstract class Struct implements PositionUpdatable {
             setByte((byte) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1227,8 +1260,10 @@ public abstract class Struct implements PositionUpdatable {
             currByteBuffer.putFloat(this.memberAbsolutePosition, value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1249,23 +1284,22 @@ public abstract class Struct implements PositionUpdatable {
             currByteBuffer.putDouble(this.memberAbsolutePosition, value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
-    protected final class Member extends AbstractMember {
+    protected abstract class NonScalarMember extends AbstractMember {
 
-        Member(final int bitLength) {
-            super(bitLength, 1);
+        public NonScalarMember(int bitLength, int wordSize) {
+            super(bitLength, wordSize);
         }
+
     }
 
     protected abstract class ScalarMember extends AbstractMember {
-        /**
-         * Holds the bit length of this member.
-         */
-        final int memberMaxBitLength;
 
         /**
          * Base constructor for custom member types.
@@ -1281,7 +1315,6 @@ public abstract class Struct implements PositionUpdatable {
          */
         protected ScalarMember(final int bitLength, final int wordSize) {
             super(bitLength, wordSize);
-            this.memberMaxBitLength = wordSize * 8;
         }
 
         /**
@@ -1296,6 +1329,18 @@ public abstract class Struct implements PositionUpdatable {
          */
         protected ScalarMember(final int bitLength) {
             this(bitLength, (bitLength / 8));
+        }
+
+        @Override
+        public final boolean equals(Object thatObj) {
+            if (this == thatObj) {
+                return true;
+            } else if (thatObj == null || getClass() != thatObj.getClass()) {
+                return false;
+            } else {
+                final ScalarMember that = (ScalarMember) thatObj;
+                return Objects.equals(this.valueObj(), that.valueObj());
+            }
         }
 
         final byte getByte() {
@@ -1338,6 +1383,18 @@ public abstract class Struct implements PositionUpdatable {
             currByteBuffer.putShort(this.memberAbsolutePosition, value);
         }
 
+        @Override
+        public final int hashCode() {
+            return Objects.hash(this.valueObj());
+        }
+
+        @Override
+        public final String toString() {
+            return String.valueOf(this.valueObj());
+        }
+
+        public abstract Object valueObj();
+
     }
 
     /**
@@ -1357,8 +1414,10 @@ public abstract class Struct implements PositionUpdatable {
             setShort(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1379,8 +1438,10 @@ public abstract class Struct implements PositionUpdatable {
             setInt(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1401,8 +1462,10 @@ public abstract class Struct implements PositionUpdatable {
             setLong(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1423,8 +1486,17 @@ public abstract class Struct implements PositionUpdatable {
             setByte(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
+        }
+    }
+
+    private final class StructMember extends AbstractMember {
+
+        StructMember(final int bitLength) {
+            super(bitLength, 1);
         }
     }
 
@@ -1432,11 +1504,11 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a UTF-8 character string, null terminated
      * (for C/C++ compatibility)
      */
-    public final class UTF8String extends AbstractMember {
+    public final class UTF8String extends NonScalarMember {
 
+        private final int length;
         private final UTF8ByteBufferReader reader = new UTF8ByteBufferReader();
         private final UTF8ByteBufferWriter writer = new UTF8ByteBufferWriter();
-        private final int length;
 
         public UTF8String(final int length) {
             super((length + 1) << 3, 1);
@@ -1487,6 +1559,7 @@ public abstract class Struct implements PositionUpdatable {
             }
         }
 
+        @Override
         public final String toString() {
             return this.get().toString();
         }
@@ -1513,8 +1586,10 @@ public abstract class Struct implements PositionUpdatable {
             setChar(value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1539,8 +1614,10 @@ public abstract class Struct implements PositionUpdatable {
             setByte((byte) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1561,8 +1638,10 @@ public abstract class Struct implements PositionUpdatable {
             setShort((short) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1583,8 +1662,10 @@ public abstract class Struct implements PositionUpdatable {
             setInt((int) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 
@@ -1605,8 +1686,10 @@ public abstract class Struct implements PositionUpdatable {
             setByte((byte) value);
         }
 
-        public final String toString() {
-            return String.valueOf(this.get());
+
+        @Override
+        public final Object valueObj() {
+            return get();
         }
     }
 }
