@@ -503,17 +503,6 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     /**
-     * Returns the absolute byte position of this struct within its associated
-     * {@link #structByteBuffer byte buffer}.
-     *
-     * @return the absolute position of this struct (can be an inner struct)
-     * in the byte buffer.
-     */
-    public final int getAbsolutePosition(final ByteBuffer byteBuffer) {
-        return getRelativePosition() + byteBuffer.position();
-    }
-
-    /**
      * Returns the relative byte position of this struct within its associated
      * {@link #structByteBuffer byte buffer}.
      *
@@ -648,9 +637,9 @@ public abstract class Struct implements PositionUpdatable {
         }
         final int alreadyRead = size - remaining; // typically 0
         if (this.structByteBuffer.hasArray()) {
-            final int offset = this.structByteBuffer.arrayOffset() + getAbsolutePosition(this.structByteBuffer);
+            final int offset = this.structByteBuffer.arrayOffset() + getRelativePosition();
             final int bytesRead = in.read(this.structByteBuffer.array(), offset + alreadyRead, remaining);
-            this.structByteBuffer.position(getAbsolutePosition(this.structByteBuffer)
+            this.structByteBuffer.position(getRelativePosition()
                     + alreadyRead
                     + bytesRead
                     - offset);
@@ -659,7 +648,7 @@ public abstract class Struct implements PositionUpdatable {
             synchronized (this.structByteBuffer) {
                 final byte[] _bytes = new byte[size()];
                 final int bytesRead = in.read(_bytes, 0, remaining);
-                this.structByteBuffer.position(getAbsolutePosition(this.structByteBuffer) + alreadyRead);
+                this.structByteBuffer.position(getRelativePosition() + alreadyRead);
                 this.structByteBuffer.put(_bytes, 0, bytesRead);
                 return bytesRead;
             }
@@ -685,7 +674,7 @@ public abstract class Struct implements PositionUpdatable {
         bitStart = (structByteOrder == ByteOrder.BIG_ENDIAN)
                 ? bitStart
                 : 64 - bitSize - bitStart;
-        final int index = getAbsolutePosition(this.structByteBuffer) + offset;
+        final int index = getRelativePosition() + offset;
         long value = readByteBufferLong(index);
         value <<= bitStart; // Clears preceding bits.
         value >>= (64 - bitSize); // Signed shift.
@@ -798,7 +787,7 @@ public abstract class Struct implements PositionUpdatable {
     public String toString() {
         final StringBuilder tmp = new StringBuilder();
         final int size = size();
-        final int start = getAbsolutePosition(this.structByteBuffer);
+        final int start = getRelativePosition();
         for (int i = 0; i < size; i++) {
             int b = this.structByteBuffer.get(start + i) & 0xFF;
             tmp.append(HEXA[b >> 4]);
@@ -823,12 +812,12 @@ public abstract class Struct implements PositionUpdatable {
      */
     public void write(final OutputStream out) throws IOException {
         if (this.structByteBuffer.hasArray()) {
-            final int offset = this.structByteBuffer.arrayOffset() + getAbsolutePosition(this.structByteBuffer);
+            final int offset = this.structByteBuffer.arrayOffset() + getRelativePosition();
             out.write(this.structByteBuffer.array(), offset, size());
         } else {
             synchronized (this.structByteBuffer) {
                 final byte[] _bytes = new byte[size()];
-                this.structByteBuffer.position(getAbsolutePosition(this.structByteBuffer));
+                this.structByteBuffer.position(getRelativePosition());
                 this.structByteBuffer.get(_bytes);
                 out.write(_bytes);
             }
@@ -859,7 +848,7 @@ public abstract class Struct implements PositionUpdatable {
         mask <<= 64 - bitSize - bitStart;
         value <<= (64 - bitSize - bitStart);
         value &= mask; // Protects against out of range values.
-        final int index = getAbsolutePosition(this.structByteBuffer) + offset;
+        final int index = getRelativePosition() + offset;
         final long oldValue = readByteBufferLong(index);
         final long resetValue = oldValue & (~mask);
         final long newValue = resetValue | value;
