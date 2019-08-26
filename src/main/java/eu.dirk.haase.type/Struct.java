@@ -13,6 +13,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p> Equivalent to a  <code>C/C++ struct</code>; this class confers
@@ -149,7 +151,7 @@ import java.nio.ByteOrder;
  * @version 5.5.1, April 1, 2010
  */
 @SuppressWarnings("unchecked")
-public abstract class Struct {
+public abstract class Struct implements PositionUpdatable {
 
     private static final Class<? extends Bool16[]> BOOL_16 = new Bool16[0].getClass();
     private static final Class<? extends Bool32[]> BOOL_32 = new Bool32[0].getClass();
@@ -175,6 +177,8 @@ public abstract class Struct {
     private static final Class<? extends Unsigned8[]> UNSIGNED_8 = new Unsigned8[0]
             .getClass();
 
+    final List<PositionUpdatable> memberList;
+
     private final ByteOrder structByteOrder;
     /**
      * Holds the bits used in the word during construction (for bit fields).
@@ -186,6 +190,8 @@ public abstract class Struct {
      * This is the size of the last word used.
      */
     int currWordSize;
+
+    int innerStructAbsolutePosition;
     /**
      * Holds the outer struct if any.
      */
@@ -218,6 +224,7 @@ public abstract class Struct {
      */
     boolean structResetIndex;
 
+
     /**
      * Default constructor.
      */
@@ -231,6 +238,8 @@ public abstract class Struct {
     protected Struct(final ByteOrder byteOrder) {
         this.structResetIndex = isUnion();
         this.structByteOrder = byteOrder;
+        this.memberList = new ArrayList<>();
+        registerMember(this);
     }
 
     private static byte readByte(final int index, final ByteBuffer byteBuffer) {
@@ -241,6 +250,11 @@ public abstract class Struct {
         if (index < byteBuffer.limit()) {
             byteBuffer.put(index, value);
         }
+    }
+
+    @Override
+    public int absolutePosition() {
+        return this.innerStructAbsolutePosition;
     }
 
     /**
@@ -481,6 +495,16 @@ public abstract class Struct {
         return structByteOrder;
     }
 
+    private void calcAbsolutePosition() {
+        if (outerStruct != null) {
+            outerStruct.calcAbsolutePosition();
+        } else {
+            for (int i = 0; memberList.size() > i; ++i) {
+                memberList.get(i).updateAbsolutePosition();
+            }
+        }
+    }
+
     public final void clear() {
         clear(getByteBuffer());
     }
@@ -538,8 +562,9 @@ public abstract class Struct {
     public final void setRelativePosition(final int offset) {
         if (outerStruct != null) {
             outerStruct.setRelativePosition(offset + structOffset);
+        } else {
+            structOffset = offset;
         }
-        structOffset = offset;
     }
 
     /**
@@ -625,6 +650,12 @@ public abstract class Struct {
      */
     public Struct outer() {
         return outerStruct;
+    }
+
+    public int outerAbsolutePosition() {
+        return (outerStruct != null
+                ? outerStruct.getRelativePosition()
+                : structOffset);
     }
 
     public int read(final InputStream in) throws IOException {
@@ -723,6 +754,14 @@ public abstract class Struct {
         }
     }
 
+    void registerMember(final PositionUpdatable positionUpdatable) {
+        if (outerStruct != null) {
+            outerStruct.registerMember(positionUpdatable);
+        } else {
+            this.memberList.add(positionUpdatable);
+        }
+    }
+
     /**
      * Sets the current byte buffer for this struct.
      * The specified byte buffer can be mapped to memory for direct memory
@@ -751,6 +790,7 @@ public abstract class Struct {
         structOffset = offset;
         structByteBuffer = byteBuffer;
         setRelativePosition(offset);
+        calcAbsolutePosition();
     }
 
     /**
@@ -798,6 +838,11 @@ public abstract class Struct {
             tmp.append(((i & 0xF) == 0xF) ? '\n' : ' ');
         }
         return tmp.toString();
+    }
+
+    @Override
+    public void updateAbsolutePosition() {
+        this.innerStructAbsolutePosition = getRelativePosition();
     }
 
     public void write(final OutputStream out) throws IOException {
@@ -899,7 +944,7 @@ public abstract class Struct {
      * }
      * }[/code]
      */
-    protected abstract class AbstractMember {
+    protected abstract class AbstractMember implements PositionUpdatable {
 
         /**
          * Holds the relative bit offset of this member to its struct offset.
@@ -913,6 +958,8 @@ public abstract class Struct {
          * Holds the relative offset (in bytes) of this member within its struct.
          */
         final int memberOffset;
+
+        int memberAbsolutePosition;
 
         /**
          * Base constructor for custom member types.
@@ -928,6 +975,8 @@ public abstract class Struct {
          *                  at the bit level.
          */
         protected AbstractMember(final int bitLength, final int wordSize) {
+            registerMember(this);
+
             memberBitLength = bitLength;
 
             // Resets index if union.
@@ -979,6 +1028,11 @@ public abstract class Struct {
             currBitsUsed = bitLength;
             structLength = Math.max(structLength, structIndex);
             // size and index may differ because of {@link Union}
+        }
+
+        @Override
+        public int absolutePosition() {
+            return this.memberAbsolutePosition;
         }
 
         /**
@@ -1064,6 +1118,12 @@ public abstract class Struct {
         public final Struct struct() {
             return Struct.this;
         }
+
+        @Override
+        public void updateAbsolutePosition() {
+            this.memberAbsolutePosition = getRelativePosition() + memberOffset;
+        }
+
     }
 
     /**
