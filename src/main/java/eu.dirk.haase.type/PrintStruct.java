@@ -14,7 +14,7 @@ public class PrintStruct {
     }
 
     public static void members(int indent, Struct struct) throws IllegalAccessException {
-        int offset = struct.getAbsolutePosition(struct.getByteBuffer());
+        int offset = struct.absolutePosition();
         String indentStr = indentSpace(indent);
         for (Field f : struct.getClass().getDeclaredFields()) {
             f.setAccessible(true);
@@ -34,7 +34,7 @@ public class PrintStruct {
 
     public static void print(int indent, Struct struct) throws IllegalAccessException {
         String indentStr = indentSpace(indent);
-        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.getAbsolutePosition(struct.getByteBuffer()));
+        System.out.println(indentStr + struct.getClass().getSimpleName() + " { " + struct.absolutePosition());
         members(++indent, struct);
         System.out.println(indentStr + "} ");
     }
