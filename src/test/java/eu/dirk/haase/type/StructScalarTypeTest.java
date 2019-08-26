@@ -10,7 +10,7 @@ import java.nio.ByteOrder;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(BlockJUnit4ClassRunner.class)
-public class StructTest {
+public class StructScalarTypeTest {
 
 
     private void test_packet_struct_that_member_values_are_correct_read(MyAbstractScalarStruct scalarStruct, ByteBuffer byteBuffer, int structOffset) {
@@ -54,7 +54,7 @@ public class StructTest {
         byteBuffer.putChar(utfChar16);
 
         // When
-        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
         byteBuffer.position(0);
 
         scalarStruct.bool08.set(bool8);
@@ -167,7 +167,7 @@ public class StructTest {
         byteBuffer.position(0);
 
         // When
-        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
 
         scalarStruct.bool08.set(bool8);
         scalarStruct.bool16.set(bool16);
@@ -291,7 +291,7 @@ public class StructTest {
         byteBuffer.position(0);
 
         // When
-        scalarStruct.setByteBuffer(byteBuffer, structOffset);
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
 
         scalarStruct.bool08.set(bool8);
         scalarStruct.bool16.set(bool16);
@@ -394,7 +394,7 @@ public class StructTest {
         MyScalarPackedStruct scalarStruct = new MyScalarPackedStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
-        scalarStruct.setByteBuffer(byteBuffer, offset);
+        scalarStruct.initByteBuffer(byteBuffer, offset);
         byteBuffer.position(offset);
         // When
         // Then

@@ -8,6 +8,8 @@
  */
 package eu.dirk.haase.type;
 
+import java.nio.ByteOrder;
+
 /**
  * <p> Equivalent to <code>C/C++ union</code>; this class works in the same
  * way as {@link Struct} (sub-class) except that all members are mapped
@@ -38,18 +40,17 @@ package eu.dirk.haase.type;
  */
 public abstract class Union extends Struct {
 
+
     /**
      * Default constructor.
      */
     protected Union() {
+        super(ByteOrder.nativeOrder());
     }
 
-    /**
-     * Returns <code>true</code>.
-     *
-     * @return <code>true</code>
-     */
-    public final boolean isUnion() {
-        return true;
+
+    protected Union(final ByteOrder byteOrder) {
+        super(byteOrder);
     }
+
 }
