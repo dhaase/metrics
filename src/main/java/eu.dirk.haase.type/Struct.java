@@ -867,7 +867,7 @@ public abstract class Struct implements PositionUpdatable {
      * }
      * }[/code]
      */
-    protected abstract class AbstractMember implements PositionUpdatable {
+    public abstract class AbstractMember implements PositionUpdatable {
 
         /**
          * Holds the relative bit offset of this member to its struct offset.
@@ -1291,7 +1291,7 @@ public abstract class Struct implements PositionUpdatable {
         }
     }
 
-    protected abstract class NonScalarMember extends AbstractMember {
+    public abstract class NonScalarMember extends AbstractMember {
 
         public NonScalarMember(int bitLength, int wordSize) {
             super(bitLength, wordSize);
@@ -1299,7 +1299,7 @@ public abstract class Struct implements PositionUpdatable {
 
     }
 
-    protected abstract class ScalarMember extends AbstractMember {
+    public abstract class ScalarMember extends AbstractMember {
 
         /**
          * Base constructor for custom member types.
