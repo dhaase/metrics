@@ -779,18 +779,19 @@ public abstract class Struct implements PositionUpdatable {
      * @see #structByteOrder
      */
     public final void setByteBuffer(final ByteBuffer byteBuffer, final int offset) {
-        if (byteBuffer.order() != structByteOrder) {
-            throw new IllegalArgumentException(
-                    "The byte order of the specified byte buffer"
-                            + " is different from this struct byte order");
-        }
         if (outerStruct != null) {
             outerStruct.setByteBuffer(byteBuffer, offset);
+        } else {
+            if (byteBuffer.order() != structByteOrder) {
+                throw new IllegalArgumentException(
+                        "The byte order of the specified byte buffer"
+                                + " is different from this struct byte order");
+            }
+            structOffset = offset;
+            structByteBuffer = byteBuffer;
+            setRelativePosition(offset);
+            calcAbsolutePosition();
         }
-        structOffset = offset;
-        structByteBuffer = byteBuffer;
-        setRelativePosition(offset);
-        calcAbsolutePosition();
     }
 
     /**
@@ -1198,24 +1199,16 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public boolean get() {
-            return get(getByteBuffer());
-        }
-
-        public boolean get(final ByteBuffer byteBuffer) {
-            return getShort(byteBuffer) != 0;
+            return getShort() != 0;
         }
 
         public void set(final short value) {
-            set(getByteBuffer(), (value != 0));
+            set(value != 0);
         }
 
         public void set(final boolean value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final boolean value) {
             final short boolValue = (short) (value ? 1 : 0);
-            setShort(byteBuffer, boolValue);
+            setShort(boolValue);
         }
 
         public String toString() {
@@ -1238,24 +1231,16 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public boolean get() {
-            return get(getByteBuffer());
-        }
-
-        public boolean get(final ByteBuffer byteBuffer) {
-            return getInt(byteBuffer) != 0;
+            return getInt() != 0;
         }
 
         public void set(final int value) {
-            set(getByteBuffer(), (value != 0));
+            set(value != 0);
         }
 
         public void set(final boolean value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final boolean value) {
             final int boolValue = (value ? 1 : 0);
-            setInt(byteBuffer, boolValue);
+            setInt(boolValue);
         }
 
         public String toString() {
@@ -1278,24 +1263,16 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public boolean get() {
-            return get(getByteBuffer());
-        }
-
-        public boolean get(final ByteBuffer byteBuffer) {
-            return getLong(byteBuffer) != 0;
+            return getLong() != 0;
         }
 
         public void set(final long value) {
-            set(getByteBuffer(), (value != 0));
+            set(value != 0);
         }
 
         public void set(final boolean value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final boolean value) {
             final long boolValue = (value ? 1L : 0L);
-            setLong(byteBuffer, boolValue);
+            setLong(boolValue);
         }
 
         public String toString() {
@@ -1318,24 +1295,16 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public boolean get() {
-            return get(getByteBuffer());
-        }
-
-        public boolean get(final ByteBuffer byteBuffer) {
-            return getByte(byteBuffer) != 0;
+            return getByte() != 0;
         }
 
         public void set(final byte value) {
-            set(getByteBuffer(), (value != 0));
+            set(value != 0);
         }
 
         public void set(final boolean value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final boolean value) {
             final byte boolValue = (byte) (value ? 1 : 0);
-            setByte(byteBuffer, boolValue);
+            setByte(boolValue);
         }
 
         public String toString() {
@@ -1361,21 +1330,13 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public T get() {
-            return get(getByteBuffer());
-        }
-
-        public T get(final ByteBuffer byteBuffer) {
-            final short ordinal = getShort(byteBuffer);
+            final short ordinal = getShort();
             return _values[ordinal];
         }
 
-        public void set(final T value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final T e) {
+        public void set(final T e) {
             final int value = e.ordinal();
-            setShort(byteBuffer, (short) value);
+            setShort((short) value);
         }
 
         public String toString() {
@@ -1401,21 +1362,13 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public T get() {
-            return get(getByteBuffer());
-        }
-
-        public T get(final ByteBuffer byteBuffer) {
-            final int ordinal = getInt(byteBuffer);
+            final int ordinal = getInt();
             return _values[ordinal];
         }
 
-        public void set(final T value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final T e) {
+        public void set(final T e) {
             final int value = e.ordinal();
-            setInt(byteBuffer, value);
+            setInt(value);
         }
 
         public String toString() {
@@ -1441,21 +1394,13 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public T get() {
-            return get(getByteBuffer());
-        }
-
-        public T get(final ByteBuffer byteBuffer) {
-            final long ordinal = getLong(byteBuffer);
+            final long ordinal = getLong();
             return _values[(int) ordinal];
         }
 
-        public void set(final T value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final T e) {
+        public void set(final T e) {
             final long value = e.ordinal();
-            setLong(byteBuffer, value);
+            setLong(value);
         }
 
         public String toString() {
@@ -1481,21 +1426,13 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public T get() {
-            return get(getByteBuffer());
-        }
-
-        public T get(final ByteBuffer byteBuffer) {
-            final byte ordinal = getByte(byteBuffer);
+            final byte ordinal = getByte();
             return _values[ordinal];
         }
 
-        public void set(final T value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final T e) {
+        public void set(final T e) {
             final int value = e.ordinal();
-            setByte(byteBuffer, (byte) value);
+            setByte((byte) value);
         }
 
         public String toString() {
@@ -1513,21 +1450,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public float get() {
-            return get(getByteBuffer());
-        }
-
-        public float get(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            return byteBuffer.getFloat(index);
+            return structByteBuffer.getFloat(this.memberAbsolutePosition);
         }
 
         public void set(final float value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final float value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            byteBuffer.putFloat(index, value);
+            structByteBuffer.putFloat(this.memberAbsolutePosition, value);
         }
 
         public String toString() {
@@ -1545,21 +1472,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public double get() {
-            return get(getByteBuffer());
-        }
-
-        public double get(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            return byteBuffer.getDouble(index);
+            return structByteBuffer.getDouble(this.memberAbsolutePosition);
         }
 
         public void set(final double value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final double value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            byteBuffer.putDouble(index, value);
+            structByteBuffer.putDouble(this.memberAbsolutePosition, value);
         }
 
         public String toString() {
@@ -1611,79 +1528,69 @@ public abstract class Struct implements PositionUpdatable {
             this(bitLength, (bitLength / 8));
         }
 
-        final byte getByte(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            final int word = byteBuffer.get(index);
+        final byte getByte() {
+            final int word = structByteBuffer.get(this.memberAbsolutePosition);
             return (byte) ((memberBitLength == memberMaxBitLength) ? word : getWord(word));
         }
 
-        final char getChar(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            final char word = byteBuffer.getChar(index);
+        final char getChar() {
+            final char word = structByteBuffer.getChar(this.memberAbsolutePosition);
             return (char) ((memberBitLength == memberMaxBitLength) ? word : getWord(word));
         }
 
-        final int getInt(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            final int word = byteBuffer.getInt(index);
+        final int getInt() {
+            final int word = structByteBuffer.getInt(this.memberAbsolutePosition);
             return (memberBitLength == memberMaxBitLength) ? word : getWord(word);
         }
 
-        final long getLong(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            final long word = byteBuffer.getLong(index);
+        final long getLong() {
+            final long word = structByteBuffer.getLong(this.memberAbsolutePosition);
             return (memberBitLength == memberMaxBitLength) ? word : getWord(word);
         }
 
-        final short getShort(final ByteBuffer byteBuffer) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            final int word = byteBuffer.getShort(index);
+        final short getShort() {
+            final int word = structByteBuffer.getShort(this.memberAbsolutePosition);
             return (short) ((memberBitLength == memberMaxBitLength) ? word : getWord(word));
         }
 
-        final void setByte(final ByteBuffer byteBuffer, final byte value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+        final void setByte(final byte value) {
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.put(index, value);
+                structByteBuffer.put(this.memberAbsolutePosition, value);
             } else {
-                byteBuffer.put(index, (byte) setWord(value, byteBuffer.get(index)));
+                structByteBuffer.put(this.memberAbsolutePosition, (byte) setWord(value, structByteBuffer.get(this.memberAbsolutePosition)));
             }
         }
 
-        final void setChar(final ByteBuffer byteBuffer, final char value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+        final void setChar(final char value) {
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putChar(index, value);
+                structByteBuffer.putChar(this.memberAbsolutePosition, value);
             } else {
-                byteBuffer.putChar(index, (char) setWord(value, byteBuffer.getChar(index)));
+                structByteBuffer.putChar(this.memberAbsolutePosition, (char) setWord(value, structByteBuffer.getChar(this.memberAbsolutePosition)));
             }
         }
 
-        final void setInt(final ByteBuffer byteBuffer, final int value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+        final void setInt(final int value) {
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putInt(index, value);
+                structByteBuffer.putInt(this.memberAbsolutePosition, value);
             } else {
-                byteBuffer.putInt(index, setWord(value, byteBuffer.getInt(index)));
+                structByteBuffer.putInt(this.memberAbsolutePosition, setWord(value, structByteBuffer.getInt(this.memberAbsolutePosition)));
             }
         }
 
-        final void setLong(final ByteBuffer byteBuffer, final long value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+        final void setLong(final long value) {
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putLong(index, value);
+                structByteBuffer.putLong(this.memberAbsolutePosition, value);
             } else {
-                byteBuffer.putLong(index,
-                        setWord(value, byteBuffer.getLong(index)));
+                structByteBuffer.putLong(this.memberAbsolutePosition,
+                        setWord(value, structByteBuffer.getLong(this.memberAbsolutePosition)));
             }
         }
 
-        final void setShort(final ByteBuffer byteBuffer, final short value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
+        final void setShort(final short value) {
             if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putShort(index, value);
+                structByteBuffer.putShort(this.memberAbsolutePosition, value);
             } else {
-                byteBuffer.putShort(index, (short) setWord(value, byteBuffer.getShort(index)));
+                structByteBuffer.putShort(this.memberAbsolutePosition, (short) setWord(value, structByteBuffer.getShort(this.memberAbsolutePosition)));
             }
         }
 
@@ -1703,19 +1610,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public short get() {
-            return get(getByteBuffer());
-        }
-
-        public short get(final ByteBuffer byteBuffer) {
-            return getShort(byteBuffer);
+            return getShort();
         }
 
         public void set(final short value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final short value) {
-            setShort(byteBuffer, value);
+            setShort(value);
         }
 
         public String toString() {
@@ -1737,19 +1636,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public int get() {
-            return get(getByteBuffer());
-        }
-
-        public int get(final ByteBuffer byteBuffer) {
-            return getInt(byteBuffer);
+            return getInt();
         }
 
         public void set(final int value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final int value) {
-            setInt(byteBuffer, value);
+            setInt(value);
         }
 
         public String toString() {
@@ -1771,25 +1662,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public long get() {
-            return get(getByteBuffer());
-        }
-
-        public long get(final ByteBuffer byteBuffer) {
-            return getLong(byteBuffer);
+            return getLong();
         }
 
         public void set(final long value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final long value) {
-            final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-            if (memberBitLength == memberMaxBitLength) {
-                byteBuffer.putLong(index, value);
-            } else {
-                byteBuffer.putLong(index,
-                        setWord(value, byteBuffer.getLong(index)));
-            }
+            setLong(value);
         }
 
         public String toString() {
@@ -1811,19 +1688,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public byte get() {
-            return get(getByteBuffer());
-        }
-
-        public byte get(final ByteBuffer byteBuffer) {
-            return getByte(byteBuffer);
+            return getByte();
         }
 
         public void set(final byte value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final byte value) {
-            setByte(byteBuffer, value);
+            setByte(value);
         }
 
         public String toString() {
@@ -1847,16 +1716,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public String get() {
-            return get(getByteBuffer());
-        }
-
-        public String get(final ByteBuffer byteBuffer) {
-            synchronized (byteBuffer) {
+            synchronized (structByteBuffer) {
                 final StringBuilder tmp = new StringBuilder();
                 try {
-                    int index = getAbsolutePosition(byteBuffer) + memberOffset;
-                    byteBuffer.position(index);
-                    _reader.setInput(byteBuffer);
+                    structByteBuffer.position(this.memberAbsolutePosition);
+                    _reader.setInput(structByteBuffer);
                     for (int i = 0; i < _length; i++) {
                         char c = (char) _reader.read();
                         if (c == 0) { // Null terminator.
@@ -1874,16 +1738,11 @@ public abstract class Struct implements PositionUpdatable {
             }
         }
 
-        public void set(final String value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final String string) {
-            synchronized (byteBuffer) {
+        public void set(final String string) {
+            synchronized (structByteBuffer) {
                 try {
-                    final int index = getAbsolutePosition(byteBuffer) + memberOffset;
-                    byteBuffer.position(index);
-                    _writer.setOutput(byteBuffer);
+                    structByteBuffer.position(this.memberAbsolutePosition);
+                    _writer.setOutput(structByteBuffer);
                     if (string.length() < _length) {
                         _writer.write(string);
                         _writer.write(0); // Marks end of string.
@@ -1919,27 +1778,15 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public char get() {
-            return get(getByteBuffer());
-        }
-
-        public char get(final ByteBuffer byteBuffer) {
-            return getChar(byteBuffer);
+            return getChar();
         }
 
         public void set(final CharSequence single) {
-            set(getByteBuffer(), single.charAt(0));
-        }
-
-        public void set(final ByteBuffer byteBuffer, final CharSequence single) {
-            set(byteBuffer, single.charAt(0));
+            set(single.charAt(0));
         }
 
         public void set(final char value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final char value) {
-            setChar(byteBuffer, value);
+            setChar(value);
         }
 
         public String toString() {
@@ -1961,27 +1808,15 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public char get() {
-            return get(getByteBuffer());
-        }
-
-        public char get(final ByteBuffer byteBuffer) {
-            return (char) (0xFF & getByte(byteBuffer));
+            return (char) (0xFF & getByte());
         }
 
         public void set(final CharSequence single) {
-            set(getByteBuffer(), single.charAt(0));
-        }
-
-        public void set(final ByteBuffer byteBuffer, final CharSequence single) {
-            set(byteBuffer, single.charAt(0));
+            set(single.charAt(0));
         }
 
         public void set(final char value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final char value) {
-            setByte(byteBuffer, (byte) value);
+            setByte((byte) value);
         }
 
         public String toString() {
@@ -2003,19 +1838,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public int get() {
-            return get(getByteBuffer());
-        }
-
-        public int get(final ByteBuffer byteBuffer) {
-            return 0xFFFF & getShort(byteBuffer);
+            return 0xFFFF & getShort();
         }
 
         public void set(final int value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final int value) {
-            setShort(byteBuffer, (short) value);
+            setShort((short) value);
         }
 
         public String toString() {
@@ -2037,19 +1864,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public long get() {
-            return get(getByteBuffer());
-        }
-
-        public long get(final ByteBuffer byteBuffer) {
-            return 0xFFFFFFFFL & getInt(byteBuffer);
+            return 0xFFFFFFFFL & getInt();
         }
 
         public void set(final long value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final long value) {
-            setInt(byteBuffer, (int) value);
+            setInt((int) value);
         }
 
         public String toString() {
@@ -2071,19 +1890,11 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public short get() {
-            return get(getByteBuffer());
-        }
-
-        public short get(final ByteBuffer byteBuffer) {
-            return (short) (0xFF & getByte(byteBuffer));
+            return (short) (0xFF & getByte());
         }
 
         public void set(final short value) {
-            set(getByteBuffer(), value);
-        }
-
-        public void set(final ByteBuffer byteBuffer, final short value) {
-            setByte(byteBuffer, (byte) value);
+            setByte((byte) value);
         }
 
         public String toString() {
