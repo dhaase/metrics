@@ -527,6 +527,7 @@ public abstract class Struct implements PositionUpdatable {
             this.outerStruct.setAbsolutePosition(offset + this.structOffset);
         } else {
             this.structOffset = offset;
+            calcAbsolutePosition();
         }
     }
 
@@ -564,7 +565,6 @@ public abstract class Struct implements PositionUpdatable {
             this.structOffset = offset;
             this.currByteBuffer = byteBuffer;
             setAbsolutePosition(offset);
-            calcAbsolutePosition();
         }
     }
 
@@ -979,34 +979,132 @@ public abstract class Struct implements PositionUpdatable {
         private final BitSet bitSet;
 
         public BitField(final int nbrOfBits) {
-            super(nbrOfBits, 0);
+            super(nbrOfBits, nbrOfBits / 8);
             this.bitSet = new BitSet(nbrOfBits);
+            if ((nbrOfBits % 8) != 0) {
+                throw new IllegalArgumentException("Number of bits (" +
+                        nbrOfBits + ") must an integer multiple of 8.");
+            }
         }
 
-        public final byte byteValue() {
-            return (byte) longValue();
+        public final void clear(int bitIndex) {
+            rangeCheck(bitIndex);
+            bitSet.clear(bitIndex);
+            set(bitSet.toByteArray());
         }
 
-        public final int intValue() {
-            return (int) longValue();
+        public final void clear(int fromIndex, int toIndex) {
+            rangeCheck(toIndex);
+            bitSet.clear(fromIndex, toIndex);
+            set(bitSet.toByteArray());
         }
 
-        public final long longValue() {
-            long signedValue = readBits(memberBitIndex + (memberOffset << 3), memberBitLength);
-            return ~(-1L << memberBitLength) & signedValue;
+        public final void clear() {
+            bitSet.clear();
+            set(bitSet.toByteArray());
         }
 
-        public final void set(final long value) {
-            writeBits(value, memberBitIndex + (memberOffset << 3), memberBitLength);
+        public final void flip(int bitIndex) {
+            rangeCheck(bitIndex);
+            bitSet.flip(bitIndex);
+            set(bitSet.toByteArray());
         }
 
-        public final short shortValue() {
-            return (short) longValue();
+        public final void flip(int fromIndex, int toIndex) {
+            rangeCheck(toIndex);
+            bitSet.flip(fromIndex, toIndex);
+            set(bitSet.toByteArray());
+        }
+
+        public final boolean get(int bitIndex) {
+            rangeCheck(bitIndex);
+            final boolean result = bitSet.get(bitIndex);
+            set(bitSet.toByteArray());
+            return result;
+        }
+
+        public final int nextClearBit(int fromIndex) {
+            rangeCheck(fromIndex);
+            final int result = bitSet.nextClearBit(fromIndex);
+            set(bitSet.toByteArray());
+            return result;
+        }
+
+        public final int nextSetBit(int fromIndex) {
+            rangeCheck(fromIndex);
+            final int result = bitSet.nextSetBit(fromIndex);
+            set(bitSet.toByteArray());
+            return result;
+        }
+
+        private final void rangeCheck(int bitIndex) {
+            if (memberBitLength > bitIndex) {
+                throw new IllegalArgumentException("Bit index (" +
+                        bitIndex + ") is out of range; Max bit length: " +
+                        memberBitLength);
+            }
+        }
+
+        public final void set(int bitIndex) {
+            rangeCheck(bitIndex);
+            bitSet.set(bitIndex);
+            set(bitSet.toByteArray());
+        }
+
+        public final void set(int bitIndex, boolean value) {
+            rangeCheck(bitIndex);
+            bitSet.set(bitIndex, value);
+            set(bitSet.toByteArray());
+        }
+
+        public final void set(int fromIndex, int toIndex) {
+            rangeCheck(toIndex);
+            bitSet.set(fromIndex, toIndex);
+            set(bitSet.toByteArray());
+        }
+
+        public final void set(int fromIndex, int toIndex, boolean value) {
+            rangeCheck(toIndex);
+            bitSet.set(fromIndex, toIndex, value);
+            set(bitSet.toByteArray());
+        }
+
+        public final void set(final byte[] value) {
+            for (int i = 0; value.length > i; ++i) {
+                currByteBuffer.put(this.memberAbsolutePosition + i, value[i]);
+            }
+        }
+
+        public final String toBinary() {
+            final StringBuffer sb = new StringBuffer();
+
+            for (int i = 0; (memberBitLength / 8) > i; ++i) {
+                byte value = currByteBuffer.get(this.memberAbsolutePosition + i);
+                for (int j = 0; j < 8; j++) {
+                    sb.append(((value & 1) == 1) ? '1' : '0');
+                    value >>= 1;
+                }
+                sb.append('-');
+            }
+
+            if (sb.charAt(sb.length() - 1) == '-') {
+                sb.deleteCharAt(sb.length() - 1);
+            }
+
+            return sb.toString();
+        }
+
+        public final byte[] toByteArray() {
+            final byte[] bitFieldBytes = new byte[memberBitLength / 8];
+            for (int i = 0; bitFieldBytes.length > i; ++i) {
+                bitFieldBytes[i] = currByteBuffer.get(this.memberAbsolutePosition + i);
+            }
+            return bitFieldBytes;
         }
 
         @Override
         public final String toString() {
-            return String.valueOf(longValue());
+            return toBinary();
         }
     }
 

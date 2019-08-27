@@ -1,5 +1,7 @@
-package eu.dirk.haase.type;
+package eu.dirk.haase.type.test;
 
+import eu.dirk.haase.type.Struct;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -78,32 +80,32 @@ public class StructScalarTypeTest {
         scalarStruct.utfChar16.set(utfChar16);
 
         // Then
-        assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
-        assertThat(scalarStruct.bool08.get()).isEqualTo(bool8 != 0);
-        assertThat(scalarStruct.bool16.get()).isEqualTo(bool16 != 0);
-        assertThat(scalarStruct.bool32.get()).isEqualTo(bool32 != 0);
-        assertThat(scalarStruct.bool64.get()).isEqualTo(bool64 != 0);
-        assertThat(scalarStruct.enum08.get()).isEqualTo(MyEnum.eins);
-        assertThat(scalarStruct.enum16.get()).isEqualTo(MyEnum.zwei);
-        assertThat(scalarStruct.enum32.get()).isEqualTo(MyEnum.drei);
-        assertThat(scalarStruct.enum64.get()).isEqualTo(MyEnum.zwei);
-        assertThat(scalarStruct.float32.get()).isEqualTo(float32);
-        assertThat(scalarStruct.float64.get()).isEqualTo(float64);
-        assertThat(scalarStruct.signed08.get()).isEqualTo(signed8);
-        assertThat(scalarStruct.signed16.get()).isEqualTo(signed16);
-        assertThat(scalarStruct.signed32.get()).isEqualTo(signed32);
-        assertThat(scalarStruct.signed64.get()).isEqualTo(signed64);
-        assertThat(scalarStruct.unsigned08.get()).isEqualTo(unsigned8);
-        assertThat(scalarStruct.unsigned16.get()).isEqualTo(unsigned16);
-        assertThat(scalarStruct.unsigned32.get()).isEqualTo(unsigned32);
-        assertThat(scalarStruct.utfChar08.get()).isEqualTo((char) utfChar8);
-        assertThat(scalarStruct.utfChar16.get()).isEqualTo(utfChar16);
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(scalarStruct.bool08.get()).isEqualTo(bool8 != 0);
+        Assertions.assertThat(scalarStruct.bool16.get()).isEqualTo(bool16 != 0);
+        Assertions.assertThat(scalarStruct.bool32.get()).isEqualTo(bool32 != 0);
+        Assertions.assertThat(scalarStruct.bool64.get()).isEqualTo(bool64 != 0);
+        Assertions.assertThat(scalarStruct.enum08.get()).isEqualTo(MyEnum.eins);
+        Assertions.assertThat(scalarStruct.enum16.get()).isEqualTo(MyEnum.zwei);
+        Assertions.assertThat(scalarStruct.enum32.get()).isEqualTo(MyEnum.drei);
+        Assertions.assertThat(scalarStruct.enum64.get()).isEqualTo(MyEnum.zwei);
+        Assertions.assertThat(scalarStruct.float32.get()).isEqualTo(float32);
+        Assertions.assertThat(scalarStruct.float64.get()).isEqualTo(float64);
+        Assertions.assertThat(scalarStruct.signed08.get()).isEqualTo(signed8);
+        Assertions.assertThat(scalarStruct.signed16.get()).isEqualTo(signed16);
+        Assertions.assertThat(scalarStruct.signed32.get()).isEqualTo(signed32);
+        Assertions.assertThat(scalarStruct.signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.unsigned08.get()).isEqualTo(unsigned8);
+        Assertions.assertThat(scalarStruct.unsigned16.get()).isEqualTo(unsigned16);
+        Assertions.assertThat(scalarStruct.unsigned32.get()).isEqualTo(unsigned32);
+        Assertions.assertThat(scalarStruct.utfChar08.get()).isEqualTo((char) utfChar8);
+        Assertions.assertThat(scalarStruct.utfChar16.get()).isEqualTo(utfChar16);
     }
 
     @Test
     public void test_packet_struct_that_member_values_are_correct_read_big_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
@@ -113,7 +115,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_read_big_endian_with_offset() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
@@ -123,7 +125,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_read_little_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructLE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructLE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // test
@@ -133,7 +135,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_read_native_order() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStruct();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // test
@@ -198,32 +200,32 @@ public class StructScalarTypeTest {
         assertThat(byteBuffer.position()).isEqualTo(structOffset);
         byteBuffer.position(0);
 
-        assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
-        assertThat(scalarStruct.bool08.get()).isEqualTo(bool8);
-        assertThat(scalarStruct.bool16.get()).isEqualTo(bool16);
-        assertThat(scalarStruct.bool32.get()).isEqualTo(bool32);
-        assertThat(scalarStruct.bool64.get()).isEqualTo(bool64);
-        assertThat(scalarStruct.enum08.get()).isEqualTo(MyEnum.eins);
-        assertThat(scalarStruct.enum16.get()).isEqualTo(MyEnum.zwei);
-        assertThat(scalarStruct.enum32.get()).isEqualTo(MyEnum.drei);
-        assertThat(scalarStruct.enum64.get()).isEqualTo(MyEnum.zwei);
-        assertThat(scalarStruct.float32.get()).isEqualTo(float32);
-        assertThat(scalarStruct.float64.get()).isEqualTo(float64);
-        assertThat(scalarStruct.signed08.get()).isEqualTo(signed8);
-        assertThat(scalarStruct.signed16.get()).isEqualTo(signed16);
-        assertThat(scalarStruct.signed32.get()).isEqualTo(signed32);
-        assertThat(scalarStruct.signed64.get()).isEqualTo(signed64);
-        assertThat(scalarStruct.unsigned08.get()).isEqualTo(unsigned8);
-        assertThat(scalarStruct.unsigned16.get()).isEqualTo(unsigned16);
-        assertThat(scalarStruct.unsigned32.get()).isEqualTo(unsigned32);
-        assertThat(scalarStruct.utfChar08.get()).isEqualTo((char) utfChar8);
-        assertThat(scalarStruct.utfChar16.get()).isEqualTo(utfChar16);
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(scalarStruct.bool08.get()).isEqualTo(bool8);
+        Assertions.assertThat(scalarStruct.bool16.get()).isEqualTo(bool16);
+        Assertions.assertThat(scalarStruct.bool32.get()).isEqualTo(bool32);
+        Assertions.assertThat(scalarStruct.bool64.get()).isEqualTo(bool64);
+        Assertions.assertThat(scalarStruct.enum08.get()).isEqualTo(MyEnum.eins);
+        Assertions.assertThat(scalarStruct.enum16.get()).isEqualTo(MyEnum.zwei);
+        Assertions.assertThat(scalarStruct.enum32.get()).isEqualTo(MyEnum.drei);
+        Assertions.assertThat(scalarStruct.enum64.get()).isEqualTo(MyEnum.zwei);
+        Assertions.assertThat(scalarStruct.float32.get()).isEqualTo(float32);
+        Assertions.assertThat(scalarStruct.float64.get()).isEqualTo(float64);
+        Assertions.assertThat(scalarStruct.signed08.get()).isEqualTo(signed8);
+        Assertions.assertThat(scalarStruct.signed16.get()).isEqualTo(signed16);
+        Assertions.assertThat(scalarStruct.signed32.get()).isEqualTo(signed32);
+        Assertions.assertThat(scalarStruct.signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.unsigned08.get()).isEqualTo(unsigned8);
+        Assertions.assertThat(scalarStruct.unsigned16.get()).isEqualTo(unsigned16);
+        Assertions.assertThat(scalarStruct.unsigned32.get()).isEqualTo(unsigned32);
+        Assertions.assertThat(scalarStruct.utfChar08.get()).isEqualTo((char) utfChar8);
+        Assertions.assertThat(scalarStruct.utfChar16.get()).isEqualTo(utfChar16);
     }
 
     @Test
     public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
@@ -233,7 +235,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_with_roundtrip_big_endian_with_offset() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // test
@@ -243,7 +245,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_with_roundtrip_little_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructLE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructLE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // test
@@ -253,7 +255,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_with_roundtrip_native_order() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStruct();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // test
@@ -322,7 +324,7 @@ public class StructScalarTypeTest {
         assertThat(byteBuffer.position()).isEqualTo(structOffset);
         byteBuffer.position(structOffset);
 
-        assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(byteBuffer.get()).isEqualTo(bool8);
         assertThat(byteBuffer.getShort()).isEqualTo(bool16);
         assertThat(byteBuffer.getInt()).isEqualTo(bool32);
@@ -347,7 +349,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_written_big_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
@@ -357,7 +359,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_written_big_endian_with_offset() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructBE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructBE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.BIG_ENDIAN);
         // Test
@@ -367,7 +369,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_written_little_endian() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStructLE();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStructLE();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         // Test
@@ -377,7 +379,7 @@ public class StructScalarTypeTest {
     @Test
     public void test_packet_struct_that_member_values_are_correct_written_native_order() {
         // Given
-        MyAbstractScalarStruct scalarStruct = new MyScalarPackedStruct();
+        MyAbstractScalarStruct scalarStruct = new MyScalarStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
@@ -391,7 +393,7 @@ public class StructScalarTypeTest {
 
     private void test_packet_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer(int offset) {
         // Given
-        MyScalarPackedStruct scalarStruct = new MyScalarPackedStruct();
+        MyScalarStruct scalarStruct = new MyScalarStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         scalarStruct.initByteBuffer(byteBuffer, offset);
@@ -401,140 +403,140 @@ public class StructScalarTypeTest {
         int structOffset = offset;
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         assertThat(structOffset).isEqualTo(scalarStruct.absolutePosition());
-        assertThat(scalarStruct.bool08.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.bool08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
         structOffset += scalarStruct.bool08.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.bool16.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.bool16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
         structOffset += scalarStruct.bool16.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.bool32.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.bool32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
         structOffset += scalarStruct.bool32.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.bool64.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.bool64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
         structOffset += scalarStruct.bool64.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.enum08.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.enum08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
         structOffset += scalarStruct.enum08.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.enum16.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.enum16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
         structOffset += scalarStruct.enum16.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.enum32.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.enum32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
         structOffset += scalarStruct.enum32.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.enum64.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.enum64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
         structOffset += scalarStruct.enum64.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.float32.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.float32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.float32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
         structOffset += scalarStruct.float32.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.float64.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.float64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.float64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
         structOffset += scalarStruct.float64.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.signed08.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.signed08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
         structOffset += scalarStruct.signed08.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.signed16.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.signed16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
         structOffset += scalarStruct.signed16.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.signed32.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.signed32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
         structOffset += scalarStruct.signed32.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.signed64.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.signed64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
         structOffset += scalarStruct.signed64.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.unsigned08.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.unsigned08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
         structOffset += scalarStruct.unsigned08.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.unsigned16.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.unsigned16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
         structOffset += scalarStruct.unsigned16.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.unsigned32.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.unsigned32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
         structOffset += scalarStruct.unsigned32.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.utfChar08.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.utfChar08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.utfChar08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
         structOffset += scalarStruct.utfChar08.bitLength() / 8;
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
-        assertThat(scalarStruct.utfChar16.offset()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.utfChar16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.utfChar16.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.getShort();
         structOffset += scalarStruct.utfChar16.bitLength() / 8;
 
-        assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position() - offset);
-        assertThat(scalarStruct.size()).isEqualTo(structOffset - offset);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position() - offset);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(structOffset - offset);
     }
 
     @Test
@@ -578,23 +580,23 @@ public class StructScalarTypeTest {
 
     }
 
-    static class MyScalarPackedStruct extends MyAbstractScalarStruct {
+    static class MyScalarStruct extends MyAbstractScalarStruct {
 
 
     }
 
-    static class MyScalarPackedStructBE extends MyAbstractScalarStruct {
+    static class MyScalarStructBE extends MyAbstractScalarStruct {
 
-        public MyScalarPackedStructBE() {
+        public MyScalarStructBE() {
             super(ByteOrder.BIG_ENDIAN);
         }
 
 
     }
 
-    static class MyScalarPackedStructLE extends MyAbstractScalarStruct {
+    static class MyScalarStructLE extends MyAbstractScalarStruct {
 
-        public MyScalarPackedStructLE() {
+        public MyScalarStructLE() {
             super(ByteOrder.LITTLE_ENDIAN);
         }
 
