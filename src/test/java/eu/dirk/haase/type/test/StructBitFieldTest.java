@@ -24,6 +24,16 @@ public class StructBitFieldTest {
     }
 
     @Test
+    public void test_struct_that_bitField_128_values_are_correct_read_little_endian_with_offset() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(128);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, 128, 23);
+    }
+
+    @Test
     public void test_struct_that_bitField_128_values_are_correct_read_little_endian() {
         // Given
         MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(128);

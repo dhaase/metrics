@@ -40,6 +40,17 @@ public class StructUTFStringTest {
     }
 
     @Test
+    public void test_struct_that_utfString_25_chars_are_correct_read_big_endian_with_offset() {
+        // Given
+        final String UTF_STRING = "Hallo12345678900987654321";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE(UTF_STRING.length());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 123);
+    }
+
+    @Test
     public void test_struct_that_utfString_25_chars_are_correct_read_big_endian() {
         // Given
         final String UTF_STRING = "Hallo12345678900987654321";
