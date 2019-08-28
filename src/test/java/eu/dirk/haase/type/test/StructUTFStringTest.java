@@ -21,7 +21,7 @@ public class StructUTFStringTest {
 
         byteBuffer.put(signed8);
         byteBuffer.put(utfString.getBytes());
-        byteBuffer.put((byte) 0);
+        byteBuffer.put((byte) 0); // Abschlussbyte fuer den String
         byteBuffer.putLong(signed64);
 
         // When
@@ -37,6 +37,7 @@ public class StructUTFStringTest {
         Assertions.assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
         Assertions.assertThat(scalarStruct.m_2_utfString.get()).isEqualTo(utfString);
         Assertions.assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + utfString.length() + 1 + 8);
     }
 
     @Test

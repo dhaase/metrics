@@ -114,6 +114,7 @@ public class StructBitFieldTest {
         Assertions.assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
         Assertions.assertThat(scalarStruct.m_2_bitField.toByteArray()).isEqualTo(bitFieldBytes);
         Assertions.assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + bitFieldBytes.length + 8);
     }
 
 

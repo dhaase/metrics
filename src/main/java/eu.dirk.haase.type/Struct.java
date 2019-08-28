@@ -1609,7 +1609,7 @@ public abstract class Struct implements PositionUpdatable {
         private final UTF8ByteBufferWriter writer = new UTF8ByteBufferWriter();
 
         public UTF8String(final int length) {
-            super((length + 1) << 3, 1);
+            super((length + 1) << 3, (length + 1));
             this.length = length + 1; // Takes into account 0 terminator.
         }
 
