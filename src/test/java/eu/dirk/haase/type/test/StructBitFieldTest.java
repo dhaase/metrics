@@ -95,6 +95,40 @@ public class StructBitFieldTest {
         byte[] bitFieldBytes = bitSet.toByteArray();
         long signed64 = 1234L | Long.MIN_VALUE;
 
+        byteBuffer.position(structOffset);
+
+        byteBuffer.put(signed8);
+        byteBuffer.put(bitFieldBytes);
+        byteBuffer.putLong(signed64);
+
+        // When
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
+        byteBuffer.position(structOffset);
+//
+//        scalarStruct.m_1_signed08.set(signed8);
+//        scalarStruct.m_2_bitField.set(bitFieldBytes);
+//        scalarStruct.m_3_signed64.set(signed64);
+
+        // Then
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
+        Assertions.assertThat(scalarStruct.m_2_bitField.toByteArray()).isEqualTo(bitFieldBytes);
+        Assertions.assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + bitFieldBytes.length + 8);
+    }
+
+    private void test_struct_that_bitField_values_are_correct_written(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, final int nbrOfBits, int structOffset) {
+        // Given
+        BitSet bitSet = new BitSet();
+        bitSet.set(2);
+        bitSet.set(9);
+        bitSet.set(62);
+        bitSet.set(nbrOfBits - 4);
+
+        byte signed8 = 123 | Byte.MIN_VALUE;
+        byte[] bitFieldBytes = bitSet.toByteArray();
+        long signed64 = 1234L | Long.MIN_VALUE;
+
         byteBuffer.position(0);
 
         byteBuffer.put(signed8);

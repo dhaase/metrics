@@ -9,46 +9,57 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 @RunWith(BlockJUnit4ClassRunner.class)
 public class StructUTFStringTest {
 
-    private void test_struct_that_bitField_values_are_correct_read(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, String utfString, int structOffset) {
+    @Test
+    public void test_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer() {
+        test_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer(0);
+    }
+
+    private void test_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer(int offset) {
         // Given
-        byte signed8 = 123 | Byte.MIN_VALUE;
-        long signed64 = 1234L | Long.MIN_VALUE;
+        String UTF_STRING = "Hallo12345678900987654321";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE(UTF_STRING.length());
 
-        byteBuffer.position(0);
-
-        byteBuffer.put(signed8);
-        byteBuffer.put(utfString.getBytes());
-        byteBuffer.put((byte) 0); // Abschlussbyte fuer den String
-        byteBuffer.putLong(signed64);
-
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        scalarStruct.initByteBuffer(byteBuffer, offset);
+        byteBuffer.position(offset);
         // When
-        scalarStruct.initByteBuffer(byteBuffer, structOffset);
-        byteBuffer.position(0);
-
-        scalarStruct.m_1_signed08.set(signed8);
-        scalarStruct.m_2_utfString.set(utfString);
-        scalarStruct.m_3_signed64.set(signed64);
-
         // Then
-        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
-        Assertions.assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
-        Assertions.assertThat(scalarStruct.m_2_utfString.get()).isEqualTo(utfString);
-        Assertions.assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
-        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + utfString.length() + 1 + 8);
+        int structOffset = offset;
+
+        assertThat(structOffset).isEqualTo(byteBuffer.position());
+        assertThat(scalarStruct.m_1_signed08.offset()).isEqualTo(structOffset - offset);
+        assertThat(structOffset).isEqualTo(scalarStruct.m_1_signed08.absolutePosition());
+        // bewege die Position jeweils um 1 Byte weiter
+        byteBuffer.get();
+        structOffset += scalarStruct.m_1_signed08.bitLength() / 8;
+
+        assertThat(structOffset).isEqualTo(byteBuffer.position());
+        assertThat(scalarStruct.m_2_utfString.offset()).isEqualTo(structOffset - offset);
+        assertThat(structOffset).isEqualTo(scalarStruct.m_2_utfString.absolutePosition());
+        // bewege die Position jeweils um 1 Byte weiter
+        byteBuffer.position(byteBuffer.position() + scalarStruct.m_2_utfString.length());
+        structOffset += scalarStruct.m_2_utfString.bitLength() / 8;
+
+        assertThat(structOffset).isEqualTo(byteBuffer.position());
+        assertThat(scalarStruct.m_3_signed64.offset()).isEqualTo(structOffset - offset);
+        assertThat(structOffset).isEqualTo(scalarStruct.m_3_signed64.absolutePosition());
+        // bewege die Position jeweils um 8 Byte weiter
+        byteBuffer.getLong();
+        structOffset += scalarStruct.m_3_signed64.bitLength() / 8;
+
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position() - offset);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(structOffset - offset);
     }
 
     @Test
-    public void test_struct_that_utfString_25_chars_are_correct_read_big_endian_with_offset() {
-        // Given
-        final String UTF_STRING = "Hallo12345678900987654321";
-        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE(UTF_STRING.length());
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        byteBuffer.order(scalarStruct.byteOrder());
-        // test
-        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 123);
+    public void test_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer_with_offset() {
+        test_struct_that_of_the_member_positions_are_in_sync_with_byte_buffer(123);
     }
 
     @Test
@@ -59,7 +70,18 @@ public class StructUTFStringTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
         // test
-        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+        test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+    }
+
+    @Test
+    public void test_struct_that_utfString_25_chars_are_correct_read_big_endian_with_offset() {
+        // Given
+        final String UTF_STRING = "Hallo12345678900987654321";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE(UTF_STRING.length());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 123);
     }
 
     @Test
@@ -70,7 +92,7 @@ public class StructUTFStringTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
         // test
-        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+        test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
     }
 
     @Test
@@ -81,7 +103,7 @@ public class StructUTFStringTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
         // test
-        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+        test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
     }
 
     @Test
@@ -92,22 +114,46 @@ public class StructUTFStringTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
         // test
-        test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+        test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
+    }
+
+    private void test_struct_that_utf_string_values_are_correct_read(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, String utfString, int structOffset) {
+        // Given
+        byte signed8 = 123 | Byte.MIN_VALUE;
+        long signed64 = 1234L | Long.MIN_VALUE;
+
+        byteBuffer.position(structOffset);
+        byteBuffer.put(signed8);
+        for(int i=0; utfString.length() > i; ++i) {
+            byteBuffer.put((byte)0);
+        }
+        byteBuffer.put((byte)0);
+        byteBuffer.putLong(signed64);
+
+        // When
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
+
+        // Then
+        assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        assertThat(scalarStruct.size()).isEqualTo(1 + 8 + utfString.length() + 3);
+        assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
+
+        assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
+        assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
     }
 
     static class MyAbstractBitFieldStruct extends Struct {
+
         final Signed8 m_1_signed08 = new Signed8();
-        final UTF8String m_2_utfString;
+        final Utf8String m_2_utfString = new Utf8String(27);
         final Signed64 m_3_signed64 = new Signed64();
 
         MyAbstractBitFieldStruct(final int nbrOfChars) {
             super();
-            m_2_utfString = new UTF8String(nbrOfChars);
         }
 
         MyAbstractBitFieldStruct(final ByteOrder byteOrder, final int nbrOfChars) {
             super(byteOrder);
-            m_2_utfString = new UTF8String(nbrOfChars);
         }
     }
 

@@ -33,7 +33,7 @@ public class StructScalarTypeTest {
         byte utfChar8 = 'A';
         char utfChar16 = '\u4E0D';
 
-        byteBuffer.position(0);
+        byteBuffer.position(structOffset);
 
         byteBuffer.put(bool8);
         byteBuffer.putShort(bool16);
@@ -57,27 +57,6 @@ public class StructScalarTypeTest {
 
         // When
         scalarStruct.initByteBuffer(byteBuffer, structOffset);
-        byteBuffer.position(0);
-
-        scalarStruct.bool08.set(bool8);
-        scalarStruct.bool16.set(bool16);
-        scalarStruct.bool32.set(bool32);
-        scalarStruct.bool64.set(bool64);
-        scalarStruct.enum08.set(MyEnum.eins);
-        scalarStruct.enum16.set(MyEnum.zwei);
-        scalarStruct.enum32.set(MyEnum.drei);
-        scalarStruct.enum64.set(MyEnum.zwei);
-        scalarStruct.float32.set(float32);
-        scalarStruct.float64.set(float64);
-        scalarStruct.signed08.set(signed8);
-        scalarStruct.signed16.set(signed16);
-        scalarStruct.signed32.set(signed32);
-        scalarStruct.signed64.set(signed64);
-        scalarStruct.unsigned08.set(unsigned8);
-        scalarStruct.unsigned16.set(unsigned16);
-        scalarStruct.unsigned32.set(unsigned32);
-        scalarStruct.utfChar08.set((char) utfChar8);
-        scalarStruct.utfChar16.set(utfChar16);
 
         // Then
         Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
@@ -567,8 +546,8 @@ public class StructScalarTypeTest {
         final Unsigned8 unsigned08 = new Unsigned8();
         final Unsigned16 unsigned16 = new Unsigned16();
         final Unsigned32 unsigned32 = new Unsigned32();
-        final UTFChar8 utfChar08 = new UTFChar8();
-        final UTFChar16 utfChar16 = new UTFChar16();
+        final UtfChar8 utfChar08 = new UtfChar8();
+        final UtfChar16 utfChar16 = new UtfChar16();
 
         MyAbstractScalarStruct() {
             super();

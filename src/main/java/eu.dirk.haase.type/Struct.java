@@ -463,14 +463,14 @@ public abstract class Struct implements PositionUpdatable {
      * @param stringLength the length of the string elements.
      * @return the specified string array.
      */
-    protected final UTF8String[] array(final UTF8String[] array, final int stringLength) {
+    protected final Utf8String[] array(final Utf8String[] array, final int stringLength) {
         final boolean resetIndexSaved = structResetIndex;
         if (structResetIndex) {
             structIndex = 0;
             structResetIndex = false; // Ensures the array elements are sequential.
         }
         for (int i = 0; i < array.length; i++) {
-            array[i] = new UTF8String(stringLength);
+            array[i] = new Utf8String(stringLength);
         }
         structResetIndex = resetIndexSaved;
         return array;
@@ -1602,13 +1602,13 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a UTF-8 character string, null terminated
      * (for C/C++ compatibility)
      */
-    public final class UTF8String extends NonScalarMember {
+    public final class Utf8String extends NonScalarMember {
 
         private final int length;
         private final UTF8ByteBufferReader reader = new UTF8ByteBufferReader();
         private final UTF8ByteBufferWriter writer = new UTF8ByteBufferWriter();
 
-        public UTF8String(final int length) {
+        public Utf8String(final int length) {
             super((length + 1) << 3, (length + 1));
             this.length = length + 1; // Takes into account 0 terminator.
         }
@@ -1666,9 +1666,9 @@ public abstract class Struct implements PositionUpdatable {
     /**
      * This class represents a 16 bits signed integer.
      */
-    public final class UTFChar16 extends ScalarMember {
+    public final class UtfChar16 extends ScalarMember {
 
-        public UTFChar16() {
+        public UtfChar16() {
             super(16);
         }
 
@@ -1694,9 +1694,9 @@ public abstract class Struct implements PositionUpdatable {
     /**
      * This class represents a 8 bits unsigned integer.
      */
-    public final class UTFChar8 extends ScalarMember {
+    public final class UtfChar8 extends ScalarMember {
 
-        public UTFChar8() {
+        public UtfChar8() {
             super(8);
         }
 
