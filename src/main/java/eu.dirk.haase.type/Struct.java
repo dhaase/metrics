@@ -13,10 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * <p> Equivalent to a  <code>C/C++ struct</code>; this class confers
@@ -1599,127 +1596,6 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     /**
-     * This class represents a UTF-8 character string, null terminated
-     * (for C/C++ compatibility)
-     */
-    public final class Utf8String extends NonScalarMember {
-
-        private final int length;
-        private final UTF8ByteBufferReader reader = new UTF8ByteBufferReader();
-        private final UTF8ByteBufferWriter writer = new UTF8ByteBufferWriter();
-
-        public Utf8String(final int length) {
-            super((length + 1) << 3, (length + 1));
-            this.length = length + 1; // Takes into account 0 terminator.
-        }
-
-        public final CharSequence get() {
-            final StringBuilder tmp = new StringBuilder();
-            try {
-                currByteBuffer.position(this.memberAbsolutePosition);
-                reader.setInput(currByteBuffer);
-                for (int i = 0; i < length; i++) {
-                    char c = (char) reader.read();
-                    if (c == 0) { // Null terminator.
-                        return tmp.toString();
-                    } else {
-                        tmp.append(c);
-                    }
-                }
-                return tmp.toString();
-            } catch (IOException e) { // Should never happen.
-                throw new Error(e.getMessage());
-            } finally {
-                reader.reset();
-            }
-        }
-
-        public final int length() {
-            return length;
-        }
-
-        public final void set(final CharSequence string) {
-            try {
-                currByteBuffer.position(this.memberAbsolutePosition);
-                writer.setOutput(currByteBuffer);
-                if (string.length() < length) {
-                    writer.write(string);
-                    writer.write(0); // Marks end of string.
-                } else if (string.length() > length) { // Truncates.
-                    writer.write(string.subSequence(0, length));
-                } else { // Exact same length.
-                    writer.write(string);
-                }
-            } catch (IOException e) { // Should never happen.
-                throw new Error(e.getMessage());
-            } finally {
-                writer.reset();
-            }
-        }
-
-        @Override
-        public final String toString() {
-            return this.get().toString();
-        }
-    }
-
-    /**
-     * This class represents a 16 bits signed integer.
-     */
-    public final class UtfChar16 extends ScalarMember {
-
-        public UtfChar16() {
-            super(16);
-        }
-
-        public final char get() {
-            return getChar();
-        }
-
-        public final void set(final CharSequence single) {
-            set(single.charAt(0));
-        }
-
-        public final void set(final char value) {
-            setChar(value);
-        }
-
-
-        @Override
-        public final Object valueObj() {
-            return get();
-        }
-    }
-
-    /**
-     * This class represents a 8 bits unsigned integer.
-     */
-    public final class UtfChar8 extends ScalarMember {
-
-        public UtfChar8() {
-            super(8);
-        }
-
-        public final char get() {
-            return (char) (0xFF & getByte());
-        }
-
-        public final void set(final CharSequence single) {
-            set(single.charAt(0));
-        }
-
-        public final void set(final char value) {
-            setByte((byte) value);
-        }
-
-
-        @Override
-        public final Object valueObj() {
-            return get();
-        }
-    }
-
-    /**
      * This class represents a 16 bits unsigned integer.
      */
     public final class Unsigned16 extends ScalarMember {
@@ -1781,6 +1657,107 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public final void set(final short value) {
+            setByte((byte) value);
+        }
+
+
+        @Override
+        public final Object valueObj() {
+            return get();
+        }
+    }
+
+    /**
+     * This class represents a UTF-8 character string, null terminated
+     * (for C/C++ compatibility)
+     */
+    public final class Utf8String extends NonScalarMember {
+
+        private final int length;
+
+        public Utf8String(final int length) {
+            super((length + 1) * 8, (length + 1));
+            this.length = length + 1; // Takes into account 0 terminator.
+        }
+
+        public final CharSequence get() {
+            final StringBuilder sb = new StringBuilder(length);
+            final int maxIndex = this.memberAbsolutePosition + length;
+            for(int i=this.memberAbsolutePosition; maxIndex > i; ++i) {
+                final byte charByte = currByteBuffer.get(i);
+                if (charByte > 0) {
+                    sb.append((char) charByte);
+                } else {
+                    break;
+                }
+            }
+            return sb;
+        }
+
+        public final int length() {
+            return length;
+        }
+
+        public final void set(final CharSequence string) {
+            final int minLength = Math.min(this.length - 1, string.length());
+            for(int i=0; minLength > i; ++i) {
+                currByteBuffer.put(this.memberAbsolutePosition + i, (byte)string.charAt(i));
+            }
+            currByteBuffer.put(minLength+1, (byte)0);
+        }
+
+        @Override
+        public final String toString() {
+            return this.get().toString();
+        }
+    }
+
+    /**
+     * This class represents a 16 bits signed integer.
+     */
+    public final class UtfChar16 extends ScalarMember {
+
+        public UtfChar16() {
+            super(16);
+        }
+
+        public final char get() {
+            return getChar();
+        }
+
+        public final void set(final CharSequence single) {
+            set(single.charAt(0));
+        }
+
+        public final void set(final char value) {
+            setChar(value);
+        }
+
+
+        @Override
+        public final Object valueObj() {
+            return get();
+        }
+    }
+
+    /**
+     * This class represents a 8 bits unsigned integer.
+     */
+    public final class UtfChar8 extends ScalarMember {
+
+        public UtfChar8() {
+            super(8);
+        }
+
+        public final char get() {
+            return (char) (0xFF & getByte());
+        }
+
+        public final void set(final CharSequence single) {
+            set(single.charAt(0));
+        }
+
+        public final void set(final char value) {
             setByte((byte) value);
         }
 

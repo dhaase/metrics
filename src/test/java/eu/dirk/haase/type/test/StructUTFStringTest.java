@@ -76,7 +76,7 @@ public class StructUTFStringTest {
     @Test
     public void test_struct_that_utfString_25_chars_are_correct_read_big_endian_with_offset() {
         // Given
-        final String UTF_STRING = "Hallo12345678900987654321";
+        final String UTF_STRING = "Hallo21";
         MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE(UTF_STRING.length());
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
@@ -87,7 +87,7 @@ public class StructUTFStringTest {
     @Test
     public void test_struct_that_utfString_25_chars_are_correct_read_little_endian() {
         // Given
-        final String UTF_STRING = "Hallo12345678900987654321";
+        final String UTF_STRING = "Hallo1234987654321";
         MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(UTF_STRING.length());
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(scalarStruct.byteOrder());
@@ -117,17 +117,77 @@ public class StructUTFStringTest {
         test_struct_that_utf_string_values_are_correct_read(scalarStruct, byteBuffer, UTF_STRING, 0);
     }
 
+    @Test
+    public void test_struct_that_utfString_5_chars_are_correct_written_big_endian() {
+        // Given
+        final String UTF_STRING = "Hallo";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(UTF_STRING.length());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_utf_string_values_are_correct_written(scalarStruct, byteBuffer, UTF_STRING, 0);
+    }
+
+    @Test
+    public void test_struct_that_utfString_5_chars_are_correct_written_big_endian_with_offset() {
+        // Given
+        final String UTF_STRING = "Hallo";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(UTF_STRING.length());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_utf_string_values_are_correct_written(scalarStruct, byteBuffer, UTF_STRING, 230);
+    }
+
+    @Test
+    public void test_struct_that_utfString_5_chars_are_correct_written_little_endian() {
+        // Given
+        final String UTF_STRING = "Hallo";
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE(UTF_STRING.length());
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_utf_string_values_are_correct_written(scalarStruct, byteBuffer, UTF_STRING, 0);
+    }
+
+    private void test_struct_that_utf_string_values_are_correct_written(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, String utfString, int structOffset) {
+        // Given
+        byte signed8 = 123 + Byte.MIN_VALUE;
+        long signed64 = 1234L + Long.MIN_VALUE;
+
+        byteBuffer.position(structOffset);
+
+        // When
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
+        scalarStruct.m_1_signed08.set(signed8);
+        scalarStruct.m_2_utfString.set(utfString);
+        scalarStruct.m_3_signed64.set(signed64);
+
+        // Then
+        assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        assertThat(scalarStruct.size()).isEqualTo(1 + scalarStruct.m_2_utfString.length() + 8);
+        assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
+
+        assertThat(byteBuffer.get()).isEqualTo(signed8);
+        byte[] byteChar = new byte[scalarStruct.m_2_utfString.length()];
+        byteBuffer.get(byteChar);
+        assertThat(new String(byteChar,0,utfString.length())).isEqualTo(utfString);
+        assertThat(byteBuffer.getLong()).isEqualTo(signed64);
+    }
+
     private void test_struct_that_utf_string_values_are_correct_read(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, String utfString, int structOffset) {
         // Given
-        byte signed8 = 123 | Byte.MIN_VALUE;
-        long signed64 = 1234L | Long.MIN_VALUE;
+        byte signed8 = 123 + Byte.MIN_VALUE;
+        long signed64 = 1234L + Long.MIN_VALUE;
 
         byteBuffer.position(structOffset);
         byteBuffer.put(signed8);
         for(int i=0; utfString.length() > i; ++i) {
+            byteBuffer.put((byte)utfString.charAt(i));
+        }
+        for(int i=utfString.length(); scalarStruct.m_2_utfString.length() > i; ++i) {
             byteBuffer.put((byte)0);
         }
-        byteBuffer.put((byte)0);
         byteBuffer.putLong(signed64);
 
         // When
@@ -135,10 +195,11 @@ public class StructUTFStringTest {
 
         // Then
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
-        assertThat(scalarStruct.size()).isEqualTo(1 + 8 + utfString.length() + 3);
+        assertThat(scalarStruct.size()).isEqualTo(1 + scalarStruct.m_2_utfString.length() + 8);
         assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
 
         assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
+        assertThat(scalarStruct.m_2_utfString.get().toString()).isEqualTo(utfString);
         assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
     }
 
