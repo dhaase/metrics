@@ -140,6 +140,129 @@ public class StructBitFieldTest {
         test_struct_that_bitField_values_are_correct_read(scalarStruct, byteBuffer, 0);
     }
 
+    @Test
+    public void test_struct_that_bitField_70_values_are_correct_written_big_endian_offset() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_written(scalarStruct, byteBuffer, 234);
+    }
+
+    @Test
+    public void test_struct_that_bitField_70_values_are_correct_written_big_endian() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructBE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_written(scalarStruct, byteBuffer, 0);
+    }
+
+    @Test
+    public void test_struct_that_bitField_70_values_are_correct_written_little_endian() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_written(scalarStruct, byteBuffer, 0);
+    }
+
+    private void test_struct_that_bitField_values_are_correct_written(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, int structOffset) {
+        // Given
+        BitSet bitSet = new BitSet();
+        bitSet.set(2);
+        bitSet.set(9);
+        bitSet.set(62);
+        bitSet.set(72 - 4);
+        byte[] bitFieldBytes = bitSet.toByteArray();
+        byte[] buffer = new byte[bitFieldBytes.length];
+
+        byte signed8 = 123 + Byte.MIN_VALUE;
+        long signed64 = 1234L + Long.MIN_VALUE;
+
+        byteBuffer.position(structOffset);
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
+
+        scalarStruct.m_1_signed08.set(signed8);
+        scalarStruct.m_2_bitField.set(bitFieldBytes);
+        scalarStruct.m_3_signed64.set(signed64);
+
+        // When
+        byteBuffer.position(structOffset);
+
+        // Then
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(byteBuffer.get()).isEqualTo(signed8);
+        byteBuffer.get(buffer);
+        Assertions.assertThat(buffer).isEqualTo(bitFieldBytes);
+        Assertions.assertThat(byteBuffer.getLong()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + bitFieldBytes.length + 8);
+    }
+
+    @Test
+    public void test_struct_that_bitField_values_are_correct_with_roundtrip_big_endian_with_offset() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 231);
+    }
+
+    @Test
+    public void test_struct_that_bitField_values_are_correct_with_roundtrip_big_endian() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0);
+    }
+
+    @Test
+    public void test_struct_that_bitField_values_are_correct_with_roundtrip_little_endian() {
+        // Given
+        MyAbstractBitFieldStruct scalarStruct = new MyBitFieldStructLE();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(scalarStruct.byteOrder());
+        // test
+        test_struct_that_bitField_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0);
+    }
+
+    private void test_struct_that_bitField_values_are_correct_with_roundtrip(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, int structOffset) {
+        // Given
+        BitSet bitSet = new BitSet();
+        bitSet.set(2);
+        bitSet.set(9);
+        bitSet.set(62);
+        bitSet.set(72 - 4);
+        byte[] bitFieldBytes = bitSet.toByteArray();
+        byte[] buffer = new byte[bitFieldBytes.length];
+
+        byte signed8 = 123 + Byte.MIN_VALUE;
+        long signed64 = 1234L + Long.MIN_VALUE;
+
+        byteBuffer.position(structOffset);
+        scalarStruct.initByteBuffer(byteBuffer, structOffset);
+
+        scalarStruct.m_1_signed08.set(signed8);
+        scalarStruct.m_2_bitField.set(bitFieldBytes);
+        scalarStruct.m_3_signed64.set(signed64);
+
+        // When
+        byteBuffer.position(structOffset);
+
+        // Then
+        Assertions.assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
+        Assertions.assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
+        Assertions.assertThat(scalarStruct.m_2_bitField.toByteArray()).isEqualTo(bitFieldBytes);
+        Assertions.assertThat(scalarStruct.m_3_signed64.get()).isEqualTo(signed64);
+        Assertions.assertThat(scalarStruct.size()).isEqualTo(1 + bitFieldBytes.length + 8);
+    }
+
     private void test_struct_that_bitField_values_are_correct_read(MyAbstractBitFieldStruct scalarStruct, ByteBuffer byteBuffer, int structOffset) {
         // Given
         BitSet bitSet = new BitSet();

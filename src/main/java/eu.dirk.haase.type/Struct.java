@@ -905,23 +905,23 @@ public abstract class Struct implements PositionUpdatable {
             }
 
             // Check if we can merge bitfields (always true if no word boundary).
-            if ((wordSize == 0) || (
-                    (bitLength != 0)
-                            && (wordSize == currWordSize)
-                            && ((currBitsUsed + bitLength) <= (wordSize << 3)))) {
-
-                memberOffset = structIndex - currWordSize;
-                memberBitIndex = currBitsUsed;
-                currBitsUsed += bitLength;
-
-                // Straddling word boundary only possible if (wordSize == 0)
-                while (currBitsUsed > (currWordSize << 3)) {
-                    structIndex++;
-                    currWordSize++;
-                    structLength = Math.max(structLength, structIndex);
-                }
-                return; // Bit field merge done.
-            }
+//            if ((wordSize == 0) || (
+//                    (bitLength != 0)
+//                            && (wordSize == currWordSize)
+//                            && ((currBitsUsed + bitLength) <= (wordSize << 3)))) {
+//
+//                memberOffset = structIndex - currWordSize;
+//                memberBitIndex = currBitsUsed;
+//                currBitsUsed += bitLength;
+//
+//                // Straddling word boundary only possible if (wordSize == 0)
+//                while (currBitsUsed > (currWordSize << 3)) {
+//                    structIndex++;
+//                    currWordSize++;
+//                    structLength = Math.max(structLength, structIndex);
+//                }
+//                return; // Bit field merge done.
+//            }
 
             // Sets member indices.
             memberOffset = structIndex;
