@@ -171,7 +171,7 @@ public class StructUtfStringTest {
         // Then
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(scalarStruct.size()).isEqualTo(1 + scalarStruct.m_2_utfString.length() + 8);
-        assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
+        assertThat(scalarStruct.getStructAbsolutePosition()).isEqualTo(structOffset);
 
         assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
         assertThat(scalarStruct.m_2_utfString.get().toString()).isEqualTo(utfString);
@@ -192,7 +192,7 @@ public class StructUtfStringTest {
         // Then
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(scalarStruct.size()).isEqualTo(1 + scalarStruct.m_2_utfString.length() + 8);
-        assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
+        assertThat(scalarStruct.getStructAbsolutePosition()).isEqualTo(structOffset);
 
         assertThat(scalarStruct.m_1_signed08.get()).isEqualTo(signed8);
         assertThat(scalarStruct.m_2_utfString.get().toString()).isEqualTo(utfString);
@@ -248,7 +248,7 @@ public class StructUtfStringTest {
         // Then
         assertThat(scalarStruct.byteOrder()).isEqualTo(byteBuffer.order());
         assertThat(scalarStruct.size()).isEqualTo(1 + scalarStruct.m_2_utfString.length() + 8);
-        assertThat(scalarStruct.getAbsolutePosition()).isEqualTo(structOffset);
+        assertThat(scalarStruct.getStructAbsolutePosition()).isEqualTo(structOffset);
 
         assertThat(byteBuffer.get()).isEqualTo(signed8);
         byte[] byteChar = new byte[scalarStruct.m_2_utfString.length()];
