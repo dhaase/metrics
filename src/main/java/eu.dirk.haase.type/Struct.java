@@ -837,11 +837,11 @@ public abstract class Struct implements PositionUpdatable {
          * The word size can be zero, in which case the {@link #memberOffset}
          * of the member does not change.
          *
-         * @param byteSize  the word size in bytes used when accessing
-         *                  this member data or <code>0</code> if the data is accessed
-         *                  at the bit level.
+         * @param byteSize the word size in bytes used when accessing
+         *                 this member data or <code>0</code> if the data is accessed
+         *                 at the bit level.
          */
-        protected AbstractMember(final int bitLength, final int byteSize) {
+        protected AbstractMember(final int byteSize) {
             registerMember(this);
 
             this.memberLength = byteSize;
@@ -865,6 +865,10 @@ public abstract class Struct implements PositionUpdatable {
             return this.memberAbsolutePosition;
         }
 
+        public final int length() {
+            return memberLength;
+        }
+
         /**
          * Returns the byte offset of this member in its struct.
          * Equivalent to C/C++ <code>offsetof(struct(), this)</code>
@@ -873,10 +877,6 @@ public abstract class Struct implements PositionUpdatable {
          */
         public final int offset() {
             return memberOffset;
-        }
-
-        public final int length() {
-            return memberLength;
         }
 
         @Override
@@ -897,7 +897,7 @@ public abstract class Struct implements PositionUpdatable {
         private final int memberBitLength;
 
         public BitField(final int nbrOfBits) {
-            super(nbrOfBits, nbrOfBits / 8);
+            super(nbrOfBits / 8);
             this.memberBitLength = nbrOfBits;
             this.bitSet = new BitSet(nbrOfBits);
             if ((nbrOfBits % 8) != 0) {
@@ -1310,8 +1310,8 @@ public abstract class Struct implements PositionUpdatable {
 
     public abstract class NonScalarMember extends AbstractMember {
 
-        public NonScalarMember(int bitLength, int wordSize) {
-            super(bitLength, wordSize);
+        public NonScalarMember(int wordSize) {
+            super(wordSize);
         }
 
     }
@@ -1326,24 +1326,9 @@ public abstract class Struct implements PositionUpdatable {
          *
          * @param bitLength the number of bits or <code>0</code>
          *                  to force next member on next word boundary.
-         * @param wordSize  the word size in bytes used when accessing
-         *                  this member data or <code>0</code> if the data is accessed
-         */
-        protected ScalarMember(final int bitLength, final int wordSize) {
-            super(bitLength, wordSize);
-        }
-
-        /**
-         * Base constructor for custom member types.
-         * <p>
-         * The word size can be zero, in which case the {@link #memberOffset}
-         * of the member does not change.
-         *
-         * @param bitLength the number of bits or <code>0</code>
-         *                  to force next member on next word boundary.
          */
         protected ScalarMember(final int bitLength) {
-            this(bitLength, (bitLength / 8));
+            super(bitLength / 8);
         }
 
         @Override
@@ -1513,7 +1498,7 @@ public abstract class Struct implements PositionUpdatable {
         final Struct innerStruct;
 
         StructMember(final int bitLength, final Struct innerStruct) {
-            super(bitLength, (bitLength / 8));
+            super(bitLength / 8);
             this.innerStruct = innerStruct;
         }
     }
@@ -1596,16 +1581,14 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class Utf8String extends NonScalarMember {
 
-        private final int length;
 
         public Utf8String(final int length) {
-            super((length + 1) * 8, (length + 1));
-            this.length = length + 1; // Takes into account 0 terminator.
+            super(length + 1);
         }
 
         public final CharSequence get() {
-            final StringBuilder sb = new StringBuilder(length);
-            final int maxIndex = this.memberAbsolutePosition + length;
+            final StringBuilder sb = new StringBuilder(memberLength);
+            final int maxIndex = this.memberAbsolutePosition + memberLength;
             for (int i = this.memberAbsolutePosition; maxIndex > i; ++i) {
                 final byte charByte = structByteBuffer.get(i);
                 if (charByte > 0) {
@@ -1618,7 +1601,7 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         public final void set(final CharSequence string) {
-            final int minLength = Math.min(this.length - 1, string.length());
+            final int minLength = Math.min(this.memberLength - 1, string.length());
             for (int i = 0; minLength > i; ++i) {
                 structByteBuffer.put(this.memberAbsolutePosition + i, (byte) string.charAt(i));
             }
