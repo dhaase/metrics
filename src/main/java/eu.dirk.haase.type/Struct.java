@@ -13,8 +13,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -176,6 +176,7 @@ public abstract class Struct implements PositionUpdatable {
     };
     private final List<PositionUpdatable> memberList;
     private final ByteOrder structByteOrder;
+    private final List<StructMember> structMember;
     private final int structOffset;
     /**
      * Indicates if the index has to be reset for each new field (
@@ -196,8 +197,6 @@ public abstract class Struct implements PositionUpdatable {
      * Holds this struct's length.
      */
     private int structLength;
-
-    private StructMember structMember;
 
     /**
      * Default constructor.
@@ -227,7 +226,8 @@ public abstract class Struct implements PositionUpdatable {
         this.structOffset = (afterMember == null ? 0 : afterMember.memberOffset + afterMember.memberLength);
         this.structResetIndex = isUnion();
         this.structByteOrder = byteOrder;
-        this.memberList = new ArrayList<>();
+        this.memberList = new LinkedList<>();
+        this.structMember = new LinkedList<>();
         registerMember(this);
     }
 
@@ -507,8 +507,8 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     public final void setStructAbsolutePosition(final int offset) {
-        if ((this.structMember != null) && (this.structMember.innerStruct != null)) {
-            this.structMember.innerStruct.setStructAbsolutePosition(offset);
+        for (StructMember sm : this.structMember) {
+            sm.innerStruct.setStructAbsolutePosition(offset);
         }
         this.structAbsolutePosition = offset;
         calcAbsolutePosition();
@@ -550,7 +550,7 @@ public abstract class Struct implements PositionUpdatable {
      *                                  an inner struct.
      */
     protected final <S extends Struct> S inner(final S innerStruct) {
-        this.structMember = new StructMember(this, innerStruct);
+        this.structMember.add(new StructMember(this, innerStruct));
         return innerStruct;
     }
 
@@ -579,109 +579,13 @@ public abstract class Struct implements PositionUpdatable {
         return (this instanceof Union);
     }
 
-    /**
-     * Reads this struct from the specified input stream
-     * (convenience method when using Stream I/O). For better performance,
-     * use of Block I/O (e.g. <code>java.nio.channels.*</code>) is recommended.
-     * This method behaves appropriately when not all of the data is available
-     * from the input stream. Incomplete data is extremely common when the
-     * input stream is associated with something like a TCP connection.
-     * The typical usage pattern in those scenarios is to repeatedly call
-     * read() until the entire message is received.
-     *
-     * @param in the input stream being read from.
-     * @return the number of bytes read (typically the {@link #size() size}
-     * of this struct.
-     * @throws IOException if an I/O error occurs.
-     */
-    public final int read(final InputStream in) throws IOException {
-        final int size = size();
-        int remaining = size - this.structByteBuffer.position();
-        if (remaining == 0) {
-            remaining = size;// at end so move to beginning
-        }
-        final int alreadyRead = size - remaining; // typically 0
-        if (this.structByteBuffer.hasArray()) {
-            final int offset = this.structByteBuffer.arrayOffset() + getStructAbsolutePosition();
-            final int bytesRead = in.read(this.structByteBuffer.array(), offset + alreadyRead, remaining);
-            this.structByteBuffer.position(getStructAbsolutePosition()
-                    + alreadyRead
-                    + bytesRead
-                    - offset);
-            return bytesRead;
-        } else {
-            synchronized (this.structByteBuffer) {
-                final byte[] _bytes = new byte[size()];
-                final int bytesRead = in.read(_bytes, 0, remaining);
-                this.structByteBuffer.position(getStructAbsolutePosition() + alreadyRead);
-                this.structByteBuffer.put(_bytes, 0, bytesRead);
-                return bytesRead;
-            }
-        }
-    }
-
-    /**
-     * Reads the specified bits from this Struct as an long (signed) integer
-     * value.
-     *
-     * @param bitOffset the bit start position in the Struct.
-     * @param bitSize   the number of bits.
-     * @return the specified bits read as a signed long.
-     * @throws IllegalArgumentException if
-     *                                  {@code(bitOffset + bitSize - 1) / 8 >= this.size()}
-     */
-    public final long readBits(final int bitOffset, final int bitSize) {
-        if ((bitOffset + bitSize - 1) >> 3 >= this.size()) {
-            throw new IllegalArgumentException("Attempt to read outside the Struct");
-        }
-        final int offset = bitOffset >> 3;
-        int bitStart = bitOffset - (offset << 3);
-        bitStart = (structByteOrder == ByteOrder.BIG_ENDIAN)
-                ? bitStart
-                : 64 - bitSize - bitStart;
-        final int index = getStructAbsolutePosition() + offset;
-        long value = readByteBufferLong(index);
-        value <<= bitStart; // Clears preceding bits.
-        value >>= (64 - bitSize); // Signed shift.
-        return value;
-    }
-
-    private final byte readByte(final int index) {
-        return (index < this.structByteBuffer.limit()) ? this.structByteBuffer.get(index) : 0;
-    }
-
-    private final long readByteBufferLong(final int fromIndex) {
-        int index = fromIndex;
-        if (index + 8 < this.structByteBuffer.limit()) {
-            return this.structByteBuffer.getLong(index);
-        } else if (this.structByteBuffer.order() == ByteOrder.LITTLE_ENDIAN) {
-            return (readByte(index) & 0xff)
-                    + ((readByte(++index) & 0xff) << 8)
-                    + ((readByte(++index) & 0xff) << 16)
-                    + ((readByte(++index) & 0xffL) << 24)
-                    + ((readByte(++index) & 0xffL) << 32)
-                    + ((readByte(++index) & 0xffL) << 40)
-                    + ((readByte(++index) & 0xffL) << 48)
-                    + ((readByte(++index) & 0xffL) << 56);
-        } else {
-            return (((long) readByte(index)) << 56)
-                    + ((readByte(++index) & 0xffL) << 48)
-                    + ((readByte(++index) & 0xffL) << 40)
-                    + ((readByte(++index) & 0xffL) << 32)
-                    + ((readByte(++index) & 0xffL) << 24)
-                    + ((readByte(++index) & 0xff) << 16)
-                    + ((readByte(++index) & 0xff) << 8)
-                    + (readByte(++index) & 0xffL);
-        }
-    }
-
     private void registerMember(final PositionUpdatable positionUpdatable) {
         this.memberList.add(positionUpdatable);
     }
 
     public final void setByteBuffer(final ByteBuffer byteBuffer) {
-        if ((this.structMember != null) && (this.structMember.innerStruct != null)) {
-            this.structMember.innerStruct.setByteBuffer(byteBuffer);
+        for (StructMember sm : this.structMember) {
+            sm.innerStruct.setByteBuffer(byteBuffer);
         }
         if (byteBuffer.order() != this.structByteOrder) {
             throw new IllegalArgumentException(
@@ -742,91 +646,6 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     /**
-     * Writes this struct to the specified output stream
-     * (convenience method when using Stream I/O). For better performance,
-     * use of Block I/O (e.g. <code>java.nio.channels.*</code>) is recommended.
-     *
-     * @param out the output stream to write to.
-     * @throws IOException if an I/O error occurs.
-     */
-    public final void write(final OutputStream out) throws IOException {
-        if (this.structByteBuffer.hasArray()) {
-            final int offset = this.structByteBuffer.arrayOffset() + getStructAbsolutePosition();
-            out.write(this.structByteBuffer.array(), offset, size());
-        } else {
-            synchronized (this.structByteBuffer) {
-                final byte[] _bytes = new byte[size()];
-                this.structByteBuffer.position(getStructAbsolutePosition());
-                this.structByteBuffer.get(_bytes);
-                out.write(_bytes);
-            }
-        }
-    }
-
-    /**
-     * Writes the specified bits into this Struct.
-     *
-     * @param bitsValue the bits value as a signed long.
-     * @param bitOffset the bit start position in the Struct.
-     * @param bitSize   the number of bits.
-     * @throws IllegalArgumentException if
-     *                                  {@code(bitOffset + bitSize - 1) / 8 >= this.size()}
-     */
-    public final void writeBits(final long bitsValue, final int bitOffset, final int bitSize) {
-        long value = bitsValue;
-        if ((bitOffset + bitSize - 1) >> 3 >= this.size()) {
-            throw new IllegalArgumentException("Attempt to write outside the Struct");
-        }
-        final int offset = bitOffset >> 3;
-        int bitStart = (structByteOrder == ByteOrder.BIG_ENDIAN)
-                ? bitOffset - (offset << 3)
-                : 64 - bitSize - (bitOffset - (offset << 3));
-        long mask = -1L;
-        mask <<= bitStart; // Clears preceding bits
-        mask >>>= (64 - bitSize); // Unsigned shift.
-        mask <<= 64 - bitSize - bitStart;
-        value <<= (64 - bitSize - bitStart);
-        value &= mask; // Protects against out of range values.
-        final int index = getStructAbsolutePosition() + offset;
-        final long oldValue = readByteBufferLong(index);
-        final long resetValue = oldValue & (~mask);
-        final long newValue = resetValue | value;
-        writeByteBufferLong(index, newValue);
-    }
-
-    private void writeByte(final int index, final byte value) {
-        if (index < this.structByteBuffer.limit()) {
-            this.structByteBuffer.put(index, value);
-        }
-    }
-
-    private void writeByteBufferLong(final int fromIndex, final long value) {
-        int index = fromIndex;
-        if (index + 8 < this.structByteBuffer.limit()) {
-            this.structByteBuffer.putLong(index, value);
-            return;
-        } else if (this.structByteBuffer.order() == ByteOrder.LITTLE_ENDIAN) {
-            writeByte(index, (byte) value);
-            writeByte(++index, (byte) (value >> 8));
-            writeByte(++index, (byte) (value >> 16));
-            writeByte(++index, (byte) (value >> 24));
-            writeByte(++index, (byte) (value >> 32));
-            writeByte(++index, (byte) (value >> 40));
-            writeByte(++index, (byte) (value >> 48));
-            writeByte(++index, (byte) (value >> 56));
-        } else {
-            writeByte(index, (byte) (value >> 56));
-            writeByte(++index, (byte) (value >> 48));
-            writeByte(++index, (byte) (value >> 40));
-            writeByte(++index, (byte) (value >> 32));
-            writeByte(++index, (byte) (value >> 24));
-            writeByte(++index, (byte) (value >> 16));
-            writeByte(++index, (byte) (value >> 8));
-            writeByte(++index, (byte) value);
-        }
-    }
-
-    /**
      * This inner class represents the base class for all {@link Struct}
      * members. It allows applications to define additional member types.
      * For example:[code]
@@ -883,10 +702,6 @@ public abstract class Struct implements PositionUpdatable {
             // size and index may differ because of {@link Union}
         }
 
-        protected void registerMember() {
-            Struct.this.registerMember(this);
-        }
-
         @Override
         public final int absolutePosition() {
             return this.memberAbsolutePosition;
@@ -904,6 +719,10 @@ public abstract class Struct implements PositionUpdatable {
          */
         public final int offset() {
             return memberOffset;
+        }
+
+        protected void registerMember() {
+            Struct.this.registerMember(this);
         }
 
         @Override
@@ -1533,14 +1352,14 @@ public abstract class Struct implements PositionUpdatable {
             registerInnerMember();
         }
 
-        @Override
-        protected void registerMember() {
-        }
-
         private void registerInnerMember() {
-            for(final PositionUpdatable pu : innerStruct.memberList) {
+            for (final PositionUpdatable pu : innerStruct.memberList) {
                 outerStruct.registerMember(pu);
             }
+        }
+
+        @Override
+        protected void registerMember() {
         }
     }
 

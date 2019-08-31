@@ -14,16 +14,61 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StructInnerStructTest {
 
 
+    private void test_packet_struct_that_member_values_are_correct_with_roundtrip(MyAbstractStructInnerStruct scalarStruct, ByteBuffer byteBuffer, int offset) {
+        // Given
+        float value_1 = 123f;
+        double value_2 = 321d;
+        float value_3 = 234f;
+        double value_4 = 543d;
+        byte value_5 = 12;
+        short value_6 = 433;
+        byte value_7 = 24;
+        short value_8 = 231;
+        // When
+        scalarStruct.initByteBuffer(byteBuffer, offset);
+        scalarStruct.m_1_float32.set(value_1);
+        scalarStruct.m_2_float64.set(value_2);
+
+        scalarStruct.m_3_innerStruct.m_1_float32.set(value_3);
+        scalarStruct.m_3_innerStruct.m_2_float64.set(value_4);
+        scalarStruct.m_3_innerStruct.m_3_signed08.set(value_5);
+        scalarStruct.m_3_innerStruct.m_4_signed16.set(value_6);
+
+        scalarStruct.m_4_signed08.set(value_7);
+        scalarStruct.m_5_signed16.set(value_8);
+
+        // Then
+        assertThat(scalarStruct.m_1_float32.get()).isEqualTo(value_1);
+        assertThat(scalarStruct.m_2_float64.get()).isEqualTo(value_2);
+
+        assertThat(scalarStruct.m_3_innerStruct.m_1_float32.get()).isEqualTo(value_3);
+        assertThat(scalarStruct.m_3_innerStruct.m_2_float64.get()).isEqualTo(value_4);
+        assertThat(scalarStruct.m_3_innerStruct.m_3_signed08.get()).isEqualTo(value_5);
+        assertThat(scalarStruct.m_3_innerStruct.m_4_signed16.get()).isEqualTo(value_6);
+
+        assertThat(scalarStruct.m_4_signed08.get()).isEqualTo(value_7);
+        assertThat(scalarStruct.m_5_signed16.get()).isEqualTo(value_8);
+    }
+
     @Test
-    public void test_packet_struct_that_member_values_are_correct_written_native_order_with_offset() {
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_native_order() {
         // Given
         MyAbstractStructInnerStruct scalarStruct = new MyStructInnerStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_of_the_member_positions_are_correct(scalarStruct, byteBuffer, 123);
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 0);
     }
 
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_with_roundtrip_native_order_with_offset() {
+        // Given
+        MyAbstractStructInnerStruct scalarStruct = new MyStructInnerStruct();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        // Test
+        test_packet_struct_that_member_values_are_correct_with_roundtrip(scalarStruct, byteBuffer, 123);
+    }
 
     @Test
     public void test_packet_struct_that_member_values_are_correct_written_native_order() {
@@ -35,6 +80,15 @@ public class StructInnerStructTest {
         test_struct_that_of_the_member_positions_are_correct(scalarStruct, byteBuffer, 0);
     }
 
+    @Test
+    public void test_packet_struct_that_member_values_are_correct_written_native_order_with_offset() {
+        // Given
+        MyAbstractStructInnerStruct scalarStruct = new MyStructInnerStruct();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        // Test
+        test_struct_that_of_the_member_positions_are_correct(scalarStruct, byteBuffer, 123);
+    }
 
     private void test_struct_that_of_the_member_positions_are_correct(MyAbstractStructInnerStruct scalarStruct, ByteBuffer byteBuffer, int offset) {
         // When
