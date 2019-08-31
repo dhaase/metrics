@@ -386,133 +386,133 @@ public class StructScalarTypeTest {
         assertThat(structOffset).isEqualTo(scalarStruct.bool08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.bool08.bitLength() / 8;
+        structOffset += scalarStruct.bool08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.bool16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
-        structOffset += scalarStruct.bool16.bitLength() / 8;
+        structOffset += scalarStruct.bool16.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.bool32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
-        structOffset += scalarStruct.bool32.bitLength() / 8;
+        structOffset += scalarStruct.bool32.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.bool64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.bool64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
-        structOffset += scalarStruct.bool64.bitLength() / 8;
+        structOffset += scalarStruct.bool64.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.enum08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.enum08.bitLength() / 8;
+        structOffset += scalarStruct.enum08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.enum16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
-        structOffset += scalarStruct.enum16.bitLength() / 8;
+        structOffset += scalarStruct.enum16.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.enum32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
-        structOffset += scalarStruct.enum32.bitLength() / 8;
+        structOffset += scalarStruct.enum32.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.enum64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.enum64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
-        structOffset += scalarStruct.enum64.bitLength() / 8;
+        structOffset += scalarStruct.enum64.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.float32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.float32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
-        structOffset += scalarStruct.float32.bitLength() / 8;
+        structOffset += scalarStruct.float32.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.float64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.float64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
-        structOffset += scalarStruct.float64.bitLength() / 8;
+        structOffset += scalarStruct.float64.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.signed08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.signed08.bitLength() / 8;
+        structOffset += scalarStruct.signed08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.signed16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
-        structOffset += scalarStruct.signed16.bitLength() / 8;
+        structOffset += scalarStruct.signed16.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.signed32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
-        structOffset += scalarStruct.signed32.bitLength() / 8;
+        structOffset += scalarStruct.signed32.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.signed64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.signed64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
-        structOffset += scalarStruct.signed64.bitLength() / 8;
+        structOffset += scalarStruct.signed64.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.unsigned08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.unsigned08.bitLength() / 8;
+        structOffset += scalarStruct.unsigned08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.unsigned16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned16.absolutePosition());
         // bewege die Position jeweils um 2 Byte weiter
         byteBuffer.getShort();
-        structOffset += scalarStruct.unsigned16.bitLength() / 8;
+        structOffset += scalarStruct.unsigned16.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.unsigned32.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.unsigned32.absolutePosition());
         // bewege die Position jeweils um 4 Byte weiter
         byteBuffer.getInt();
-        structOffset += scalarStruct.unsigned32.bitLength() / 8;
+        structOffset += scalarStruct.unsigned32.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.utfChar08.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.utfChar08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.utfChar08.bitLength() / 8;
+        structOffset += scalarStruct.utfChar08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         Assertions.assertThat(scalarStruct.utfChar16.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.utfChar16.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.getShort();
-        structOffset += scalarStruct.utfChar16.bitLength() / 8;
+        structOffset += scalarStruct.utfChar16.length();
 
         Assertions.assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position() - offset);
         Assertions.assertThat(scalarStruct.size()).isEqualTo(structOffset - offset);

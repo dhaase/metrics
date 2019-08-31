@@ -37,21 +37,21 @@ public class StructUtfStringTest {
         assertThat(structOffset).isEqualTo(scalarStruct.m_1_signed08.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.get();
-        structOffset += scalarStruct.m_1_signed08.bitLength() / 8;
+        structOffset += scalarStruct.m_1_signed08.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         assertThat(scalarStruct.m_2_utfString.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.m_2_utfString.absolutePosition());
         // bewege die Position jeweils um 1 Byte weiter
         byteBuffer.position(byteBuffer.position() + scalarStruct.m_2_utfString.length());
-        structOffset += scalarStruct.m_2_utfString.bitLength() / 8;
+        structOffset += scalarStruct.m_2_utfString.length();
 
         assertThat(structOffset).isEqualTo(byteBuffer.position());
         assertThat(scalarStruct.m_3_signed64.offset()).isEqualTo(structOffset - offset);
         assertThat(structOffset).isEqualTo(scalarStruct.m_3_signed64.absolutePosition());
         // bewege die Position jeweils um 8 Byte weiter
         byteBuffer.getLong();
-        structOffset += scalarStruct.m_3_signed64.bitLength() / 8;
+        structOffset += scalarStruct.m_3_signed64.length();
 
         Assertions.assertThat(scalarStruct.size()).isEqualTo(byteBuffer.position() - offset);
         Assertions.assertThat(scalarStruct.size()).isEqualTo(structOffset - offset);

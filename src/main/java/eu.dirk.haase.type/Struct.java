@@ -13,7 +13,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * <p> Equivalent to a  <code>C/C++ struct</code>; this class confers
@@ -171,29 +174,27 @@ public abstract class Struct implements PositionUpdatable {
             '0', '1', '2', '3', '4', '5', '6', '7',
             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
-
-    private final ByteOrder structByteOrder;
     private final List<PositionUpdatable> memberList;
-     /**
-     * Holds the index position during construction.
-     * This is the index a the first unused byte available.
-     */
-    private int currStructIndex;
-    private int structAbsolutePosition;
-    /**
-     * Holds this struct's length.
-     */
-    private int structLength;
+    private final ByteOrder structByteOrder;
     /**
      * Indicates if the index has to be reset for each new field (
      * <code>true</code> only for Union subclasses).
      */
     boolean structResetIndex;
     /**
+     * Holds the index position during construction.
+     * This is the index a the first unused byte available.
+     */
+    private int currStructIndex;
+    private int structAbsolutePosition;
+    /**
      * Holds the byte buffer backing the struct (top struct).
      */
     private ByteBuffer structByteBuffer;
-
+    /**
+     * Holds this struct's length.
+     */
+    private int structLength;
     private StructMember structMember;
 
     /**
@@ -506,8 +507,8 @@ public abstract class Struct implements PositionUpdatable {
      * The capacity of the specified byte buffer should be at least the
      * {@link Struct#size() size} of this struct plus the offset position.
      *
-     * @param byteBuffer the new byte buffer.
-     * @param absolutePosition     the position of this struct in the specified byte buffer.
+     * @param byteBuffer       the new byte buffer.
+     * @param absolutePosition the position of this struct in the specified byte buffer.
      * @return <code>this</code>
      * @throws IllegalArgumentException      if the specified byteBuffer has a
      *                                       different byte order than this struct.
@@ -527,14 +528,14 @@ public abstract class Struct implements PositionUpdatable {
     /**
      * Defines the specified struct as inner of this struct.
      *
-     * @param <S>    Type of the Inner Struct
+     * @param <S>         Type of the Inner Struct
      * @param innerStruct the inner struct.
      * @return the specified struct.
      * @throws IllegalArgumentException if the specified struct is already
      *                                  an inner struct.
      */
     protected final <S extends Struct> S inner(final S innerStruct) {
-        this.structMember = new StructMember(innerStruct.size() << 3); // Update indexes.
+        this.structMember = new StructMember(innerStruct.size() * 8, innerStruct); // Update indexes.
         return innerStruct;
     }
 
@@ -672,6 +673,10 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final int size() {
         return structLength;
+    }
+
+    public final StructMember structMember() {
+        return structMember;
     }
 
     /**
@@ -815,15 +820,10 @@ public abstract class Struct implements PositionUpdatable {
      * }[/code]
      */
     public abstract class AbstractMember implements PositionUpdatable {
-
         /**
-         * Holds the relative bit offset of this member to its struct offset.
+         * Holds the byte length of this member.
          */
-        final int memberBitIndex;
-        /**
-         * Holds the bit length of this member.
-         */
-        final int memberBitLength;
+        final int memberLength;
         /**
          * Holds the relative offset (in bytes) of this member within its struct.
          */
@@ -835,48 +835,34 @@ public abstract class Struct implements PositionUpdatable {
          * Base constructor for custom member types.
          * <p>
          * The word size can be zero, in which case the {@link #memberOffset}
-         * of the member does not change, only {@link #memberBitIndex} is
-         * incremented.
+         * of the member does not change.
          *
-         * @param bitLength the number of bits or <code>0</code>
-         *                  to force next member on next word boundary.
-         * @param wordSize  the word size in bytes used when accessing
+         * @param byteSize  the word size in bytes used when accessing
          *                  this member data or <code>0</code> if the data is accessed
          *                  at the bit level.
          */
-        protected AbstractMember(final int bitLength, final int wordSize) {
+        protected AbstractMember(final int bitLength, final int byteSize) {
             registerMember(this);
 
-            memberBitLength = bitLength;
+            this.memberLength = byteSize;
 
             // Resets index if union.
-            if (structResetIndex) {
-                currStructIndex = 0;
+            if (Struct.this.structResetIndex) {
+                Struct.this.currStructIndex = 0;
             }
 
             // Sets member indices.
-            memberOffset = currStructIndex + (structMember == null ? 0 : structMember.memberOffset);
-            memberBitIndex = 0;
+            memberOffset = Struct.this.currStructIndex;
 
             // Update struct indices.
-            currStructIndex += wordSize;
-            structLength = Math.max(structLength, currStructIndex);
+            Struct.this.currStructIndex += byteSize;
+            Struct.this.structLength = Math.max(Struct.this.structLength, Struct.this.currStructIndex);
             // size and index may differ because of {@link Union}
         }
 
         @Override
         public final int absolutePosition() {
             return this.memberAbsolutePosition;
-        }
-
-        /**
-         * Returns the number of bits in this member. Can be zero if this
-         * member is used to force the next member to the next word boundary.
-         *
-         * @return the number of bits in the member.
-         */
-        public final int bitLength() {
-            return memberBitLength;
         }
 
         /**
@@ -887,6 +873,10 @@ public abstract class Struct implements PositionUpdatable {
          */
         public final int offset() {
             return memberOffset;
+        }
+
+        public final int length() {
+            return memberLength;
         }
 
         @Override
@@ -904,8 +894,11 @@ public abstract class Struct implements PositionUpdatable {
 
         private final BitSet bitSet;
 
+        private final int memberBitLength;
+
         public BitField(final int nbrOfBits) {
             super(nbrOfBits, nbrOfBits / 8);
+            this.memberBitLength = nbrOfBits;
             this.bitSet = new BitSet(nbrOfBits);
             if ((nbrOfBits % 8) != 0) {
                 throw new IllegalArgumentException("Number of bits (" +
@@ -1329,8 +1322,7 @@ public abstract class Struct implements PositionUpdatable {
          * Base constructor for custom member types.
          * <p>
          * The word size can be zero, in which case the {@link #memberOffset}
-         * of the member does not change, only {@link #memberBitIndex} is
-         * incremented.
+         * of the member does not change.
          *
          * @param bitLength the number of bits or <code>0</code>
          *                  to force next member on next word boundary.
@@ -1345,8 +1337,7 @@ public abstract class Struct implements PositionUpdatable {
          * Base constructor for custom member types.
          * <p>
          * The word size can be zero, in which case the {@link #memberOffset}
-         * of the member does not change, only {@link #memberBitIndex} is
-         * incremented.
+         * of the member does not change.
          *
          * @param bitLength the number of bits or <code>0</code>
          *                  to force next member on next word boundary.
@@ -1517,10 +1508,13 @@ public abstract class Struct implements PositionUpdatable {
         }
     }
 
-    private final class StructMember extends AbstractMember {
+    public final class StructMember extends AbstractMember {
 
-        StructMember(final int bitLength) {
-            super(bitLength, 1);
+        final Struct innerStruct;
+
+        StructMember(final int bitLength, final Struct innerStruct) {
+            super(bitLength, (bitLength / 8));
+            this.innerStruct = innerStruct;
         }
     }
 
@@ -1612,7 +1606,7 @@ public abstract class Struct implements PositionUpdatable {
         public final CharSequence get() {
             final StringBuilder sb = new StringBuilder(length);
             final int maxIndex = this.memberAbsolutePosition + length;
-            for(int i=this.memberAbsolutePosition; maxIndex > i; ++i) {
+            for (int i = this.memberAbsolutePosition; maxIndex > i; ++i) {
                 final byte charByte = structByteBuffer.get(i);
                 if (charByte > 0) {
                     sb.append((char) charByte);
@@ -1623,16 +1617,12 @@ public abstract class Struct implements PositionUpdatable {
             return sb;
         }
 
-        public final int length() {
-            return length;
-        }
-
         public final void set(final CharSequence string) {
             final int minLength = Math.min(this.length - 1, string.length());
-            for(int i=0; minLength > i; ++i) {
-                structByteBuffer.put(this.memberAbsolutePosition + i, (byte)string.charAt(i));
+            for (int i = 0; minLength > i; ++i) {
+                structByteBuffer.put(this.memberAbsolutePosition + i, (byte) string.charAt(i));
             }
-            structByteBuffer.put(minLength+1, (byte)0);
+            structByteBuffer.put(minLength + 1, (byte) 0);
         }
 
         @Override
