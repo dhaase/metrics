@@ -176,6 +176,7 @@ public abstract class Struct implements PositionUpdatable {
     };
     private final List<PositionUpdatable> memberList;
     private final ByteOrder structByteOrder;
+    private final int structOffset;
     /**
      * Indicates if the index has to be reset for each new field (
      * <code>true</code> only for Union subclasses).
@@ -195,19 +196,35 @@ public abstract class Struct implements PositionUpdatable {
      * Holds this struct's length.
      */
     private int structLength;
+
     private StructMember structMember;
 
     /**
      * Default constructor.
      */
     protected Struct() {
-        this(ByteOrder.nativeOrder());
+        this(ByteOrder.nativeOrder(), null);
+    }
+
+    /**
+     * Default constructor.
+     */
+    protected Struct(final AbstractMember afterMember) {
+        this(ByteOrder.nativeOrder(), afterMember);
     }
 
     /**
      * Default constructor.
      */
     protected Struct(final ByteOrder byteOrder) {
+        this(byteOrder, null);
+    }
+
+    /**
+     * Default constructor.
+     */
+    protected Struct(final ByteOrder byteOrder, final AbstractMember afterMember) {
+        this.structOffset = (afterMember == null ? 0 : afterMember.memberOffset + afterMember.memberLength);
         this.structResetIndex = isUnion();
         this.structByteOrder = byteOrder;
         this.memberList = new ArrayList<>();
@@ -490,6 +507,9 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     public final void setStructAbsolutePosition(final int offset) {
+        if ((this.structMember != null) && (this.structMember.innerStruct != null)) {
+            this.structMember.innerStruct.setStructAbsolutePosition(offset);
+        }
         this.structAbsolutePosition = offset;
         calcAbsolutePosition();
     }
@@ -516,12 +536,7 @@ public abstract class Struct implements PositionUpdatable {
      * @see #structByteOrder
      */
     public final void initByteBuffer(final ByteBuffer byteBuffer, final int absolutePosition) {
-        if (byteBuffer.order() != this.structByteOrder) {
-            throw new IllegalArgumentException(
-                    "The byte order of the specified byte buffer"
-                            + " is different from this struct byte order");
-        }
-        this.structByteBuffer = byteBuffer;
+        setByteBuffer(byteBuffer);
         setStructAbsolutePosition(absolutePosition);
     }
 
@@ -535,7 +550,7 @@ public abstract class Struct implements PositionUpdatable {
      *                                  an inner struct.
      */
     protected final <S extends Struct> S inner(final S innerStruct) {
-        this.structMember = new StructMember(innerStruct.size() * 8, innerStruct); // Update indexes.
+        this.structMember = new StructMember(this, innerStruct);
         return innerStruct;
     }
 
@@ -664,6 +679,18 @@ public abstract class Struct implements PositionUpdatable {
         this.memberList.add(positionUpdatable);
     }
 
+    public final void setByteBuffer(final ByteBuffer byteBuffer) {
+        if ((this.structMember != null) && (this.structMember.innerStruct != null)) {
+            this.structMember.innerStruct.setByteBuffer(byteBuffer);
+        }
+        if (byteBuffer.order() != this.structByteOrder) {
+            throw new IllegalArgumentException(
+                    "The byte order of the specified byte buffer"
+                            + " is different from this struct byte order");
+        }
+        this.structByteBuffer = byteBuffer;
+    }
+
     /**
      * Returns the size in bytes of this struct. The size includes
      * tail padding to satisfy the struct word size requirement
@@ -673,10 +700,6 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final int size() {
         return structLength;
-    }
-
-    public final StructMember structMember() {
-        return structMember;
     }
 
     /**
@@ -837,12 +860,12 @@ public abstract class Struct implements PositionUpdatable {
          * The word size can be zero, in which case the {@link #memberOffset}
          * of the member does not change.
          *
-         * @param byteSize the word size in bytes used when accessing
+         * @param byteSize the size in bytes used when accessing
          *                 this member data or <code>0</code> if the data is accessed
          *                 at the bit level.
          */
         protected AbstractMember(final int byteSize) {
-            registerMember(this);
+            registerMember();
 
             this.memberLength = byteSize;
 
@@ -852,12 +875,16 @@ public abstract class Struct implements PositionUpdatable {
             }
 
             // Sets member indices.
-            memberOffset = Struct.this.currStructIndex;
+            memberOffset = Struct.this.currStructIndex + Struct.this.structOffset;
 
             // Update struct indices.
             Struct.this.currStructIndex += byteSize;
             Struct.this.structLength = Math.max(Struct.this.structLength, Struct.this.currStructIndex);
             // size and index may differ because of {@link Union}
+        }
+
+        protected void registerMember() {
+            Struct.this.registerMember(this);
         }
 
         @Override
@@ -880,8 +907,8 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         @Override
-        public final void updateAbsolutePosition() {
-            this.memberAbsolutePosition = getStructAbsolutePosition() + memberOffset;
+        public void updateAbsolutePosition() {
+            this.memberAbsolutePosition = Struct.this.getStructAbsolutePosition() + this.memberOffset;
         }
 
     }
@@ -1390,7 +1417,8 @@ public abstract class Struct implements PositionUpdatable {
 
         @Override
         public final String toString() {
-            return String.valueOf(this.valueObj());
+            final Object valueObj = this.valueObj();
+            return (valueObj == null ? super.toString() : String.valueOf(valueObj));
         }
 
         public abstract Object valueObj();
@@ -1496,10 +1524,23 @@ public abstract class Struct implements PositionUpdatable {
     public final class StructMember extends AbstractMember {
 
         final Struct innerStruct;
+        final Struct outerStruct;
 
-        StructMember(final int bitLength, final Struct innerStruct) {
-            super(bitLength / 8);
+        StructMember(final Struct outerStruct, final Struct innerStruct) {
+            super(innerStruct.size());
+            this.outerStruct = outerStruct;
             this.innerStruct = innerStruct;
+            registerInnerMember();
+        }
+
+        @Override
+        protected void registerMember() {
+        }
+
+        private void registerInnerMember() {
+            for(final PositionUpdatable pu : innerStruct.memberList) {
+                outerStruct.registerMember(pu);
+            }
         }
     }
 
