@@ -37,6 +37,13 @@ public class StructInnerStructTest {
         scalarStruct.m_4_signed08.set(value_7);
         scalarStruct.m_5_signed16.set(value_8);
 
+        scalarStruct.m_6_innerStruct.m_1_float32.set(value_3);
+        scalarStruct.m_6_innerStruct.m_2_float64.set(value_4);
+        scalarStruct.m_6_innerStruct.m_3_signed08.set(value_5);
+        scalarStruct.m_6_innerStruct.m_4_signed16.set(value_6);
+
+        scalarStruct.m_7_signed08.set(value_7);
+
         // Then
         assertThat(scalarStruct.m_1_float32.get()).isEqualTo(value_1);
         assertThat(scalarStruct.m_2_float64.get()).isEqualTo(value_2);
@@ -48,6 +55,13 @@ public class StructInnerStructTest {
 
         assertThat(scalarStruct.m_4_signed08.get()).isEqualTo(value_7);
         assertThat(scalarStruct.m_5_signed16.get()).isEqualTo(value_8);
+
+        assertThat(scalarStruct.m_6_innerStruct.m_1_float32.get()).isEqualTo(value_3);
+        assertThat(scalarStruct.m_6_innerStruct.m_2_float64.get()).isEqualTo(value_4);
+        assertThat(scalarStruct.m_6_innerStruct.m_3_signed08.get()).isEqualTo(value_5);
+        assertThat(scalarStruct.m_6_innerStruct.m_4_signed16.get()).isEqualTo(value_6);
+
+        assertThat(scalarStruct.m_7_signed08.get()).isEqualTo(value_7);
     }
 
     @Test
@@ -97,6 +111,7 @@ public class StructInnerStructTest {
         assertThat(scalarStruct.m_1_float32.offset()).isEqualTo(0);
         assertThat(scalarStruct.m_2_float64.offset()).isEqualTo(4);
 
+        // Assert Offset
         assertThat(scalarStruct.m_3_innerStruct.m_1_float32.offset()).isEqualTo(4 + 8);
         assertThat(scalarStruct.m_3_innerStruct.m_2_float64.offset()).isEqualTo((4 + 8) + 4);
         assertThat(scalarStruct.m_3_innerStruct.m_3_signed08.offset()).isEqualTo((4 + 8) + 4 + 8);
@@ -105,6 +120,14 @@ public class StructInnerStructTest {
         assertThat(scalarStruct.m_4_signed08.offset()).isEqualTo(((4 + 8) + 4 + 8 + 1 + 2));
         assertThat(scalarStruct.m_5_signed16.offset()).isEqualTo(((4 + 8) + 4 + 8 + 1 + 2) + 1);
 
+        assertThat(scalarStruct.m_6_innerStruct.m_1_float32.offset()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2));
+        assertThat(scalarStruct.m_6_innerStruct.m_2_float64.offset()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4);
+        assertThat(scalarStruct.m_6_innerStruct.m_3_signed08.offset()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8);
+        assertThat(scalarStruct.m_6_innerStruct.m_4_signed16.offset()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8 + 1);
+
+        assertThat(scalarStruct.m_7_signed08.offset()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8 + 1 + 2);
+
+        // Assert Absolut Position
         assertThat(scalarStruct.m_1_float32.absolutePosition()).isEqualTo(offset);
         assertThat(scalarStruct.m_2_float64.absolutePosition()).isEqualTo((4) + offset);
 
@@ -115,6 +138,13 @@ public class StructInnerStructTest {
 
         assertThat(scalarStruct.m_4_signed08.absolutePosition()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2)) + offset);
         assertThat(scalarStruct.m_5_signed16.absolutePosition()).isEqualTo((((4 + 8) + 4 + 8 + 1 + 2) + 1) + offset);
+
+        assertThat(scalarStruct.m_6_innerStruct.m_1_float32.absolutePosition()).isEqualTo(((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2)) + offset);
+        assertThat(scalarStruct.m_6_innerStruct.m_2_float64.absolutePosition()).isEqualTo(((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4) + offset);
+        assertThat(scalarStruct.m_6_innerStruct.m_3_signed08.absolutePosition()).isEqualTo(((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8) + offset);
+        assertThat(scalarStruct.m_6_innerStruct.m_4_signed16.absolutePosition()).isEqualTo(((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8 + 1) + offset);
+
+        assertThat(scalarStruct.m_7_signed08.absolutePosition()).isEqualTo(((((4 + 8) + 4 + 8 + 1 + 2) + 1 + 2) + 4 + 8 + 1 + 2) + offset);
     }
 
     static class MyAbstractStructInnerStruct extends Struct {
@@ -123,6 +153,8 @@ public class StructInnerStructTest {
         final MyInnerStruct m_3_innerStruct = inner(new MyInnerStruct(m_2_float64));
         final Signed8 m_4_signed08 = new Signed8();
         final Signed16 m_5_signed16 = new Signed16();
+        final MyInnerStruct m_6_innerStruct = inner(new MyInnerStruct(m_5_signed16));
+        final Signed8 m_7_signed08 = new Signed8();
 
         MyAbstractStructInnerStruct() {
             super();
