@@ -17,15 +17,13 @@ public class StructArrayTest {
     public void test_struct_that_1_dimension_array_member_positions_are_correct() {
         // Given
         MyArrayStruct arrayStruct = new MyArrayStruct();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_1_dimension_array_member_positions_are_correct(arrayStruct, byteBuffer, 0);
+        test_struct_that_1_dimension_array_member_positions_are_correct(arrayStruct, 0);
     }
 
-    private void test_struct_that_1_dimension_array_member_positions_are_correct(MyArrayStruct arrayStruct, ByteBuffer byteBuffer, int offset) {
+    private void test_struct_that_1_dimension_array_member_positions_are_correct(MyArrayStruct arrayStruct, int offset) {
         // When
-        arrayStruct.initByteBuffer(byteBuffer, offset);
+        arrayStruct.setStructAbsolutePosition(offset);
         // Then Assert Offsets
         assertThat(arrayStruct.m_1_signed08.offset()).isEqualTo(0);
 
@@ -67,15 +65,53 @@ public class StructArrayTest {
     public void test_struct_that_1_dimension_array_member_positions_are_correct_with_offset() {
         // Given
         MyArrayStruct arrayStruct = new MyArrayStruct();
+        // Test
+        test_struct_that_1_dimension_array_member_positions_are_correct(arrayStruct, 123);
+    }
+
+    private void test_struct_that_1_dimension_array_member_roundtrip_are_correct(MyArrayStruct arrayStruct, ByteBuffer byteBuffer, int offset) {
+        // Given
+        final byte signed08 = (byte) 123;
+        final float float32 = 123.456f;
+        final byte arrayValueOffset = (byte) 12;
+        // When
+        arrayStruct.initByteBuffer(byteBuffer, offset);
+        arrayStruct.m_1_signed08.set(signed08);
+        for (int i = 0; 12 > i; ++i) {
+            arrayStruct.m_2_signed64[i].set((byte) i + arrayValueOffset);
+        }
+        arrayStruct.m_3_float32.set(float32);
+        // Then
+        assertThat(arrayStruct.m_1_signed08.get()).isEqualTo(signed08);
+        for (int i = 0; 12 > i; ++i) {
+            assertThat(arrayStruct.m_2_signed64[i].get()).isEqualTo((byte) i + arrayValueOffset);
+        }
+        assertThat(arrayStruct.m_3_float32.get()).isEqualTo(float32);
+    }
+
+    @Test
+    public void test_struct_that_1_dimension_array_member_roundtrip_are_correct() {
+        // Given
+        MyArrayStruct arrayStruct = new MyArrayStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_1_dimension_array_member_positions_are_correct(arrayStruct, byteBuffer, 123);
+        test_struct_that_1_dimension_array_member_roundtrip_are_correct(arrayStruct, byteBuffer, 0);
     }
 
-    private void test_struct_that_2_dimension_array_member_positions_are_correct(My2DimArrayStruct arrayStruct, ByteBuffer byteBuffer, int offset) {
+    @Test
+    public void test_struct_that_1_dimension_array_member_roundtrip_are_correct_with_offset() {
+        // Given
+        MyArrayStruct arrayStruct = new MyArrayStruct();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        // Test
+        test_struct_that_1_dimension_array_member_roundtrip_are_correct(arrayStruct, byteBuffer, 453);
+    }
+
+    private void test_struct_that_2_dimension_array_member_positions_are_correct(My2DimArrayStruct arrayStruct, int offset) {
         // When
-        arrayStruct.initByteBuffer(byteBuffer, offset);
+        arrayStruct.setStructAbsolutePosition(offset);
         // Then Assert Offsets
         assertThat(arrayStruct.m_1_signed08.offset()).isEqualTo(0);
 
@@ -174,20 +210,60 @@ public class StructArrayTest {
     public void test_struct_that_2_dimension_array_member_positions_are_correct() {
         // Given
         My2DimArrayStruct arrayStruct = new My2DimArrayStruct();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_2_dimension_array_member_positions_are_correct(arrayStruct, byteBuffer, 0);
+        test_struct_that_2_dimension_array_member_positions_are_correct(arrayStruct, 0);
     }
 
     @Test
     public void test_struct_that_2_dimension_array_member_positions_are_correct_with_offset() {
         // Given
         My2DimArrayStruct arrayStruct = new My2DimArrayStruct();
+        // Test
+        test_struct_that_2_dimension_array_member_positions_are_correct(arrayStruct, 123);
+    }
+
+    @Test
+    public void test_struct_that_2_dimension_array_member_roundtrip_are_correct() {
+        // Given
+        My2DimArrayStruct arrayStruct = new My2DimArrayStruct();
         ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
         byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_2_dimension_array_member_positions_are_correct(arrayStruct, byteBuffer, 123);
+        test_struct_that_2_dimension_array_member_roundtrip_are_correct(arrayStruct, byteBuffer, 0);
+    }
+
+    private void test_struct_that_2_dimension_array_member_roundtrip_are_correct(My2DimArrayStruct arrayStruct, ByteBuffer byteBuffer, int offset) {
+        // Given
+        final byte signed08 = (byte) 123;
+        final float float32 = 123.456f;
+        final byte arrayValueOffset = (byte) 12;
+        // When
+        arrayStruct.initByteBuffer(byteBuffer, offset);
+        arrayStruct.m_1_signed08.set(signed08);
+        for (int i = 0; 3 > i; ++i) {
+            for (int j = 0; 12 > j; ++j) {
+                arrayStruct.m_2_signed64[i][j].set((byte) i + j + arrayValueOffset);
+            }
+        }
+        arrayStruct.m_3_float32.set(float32);
+        // Then
+        assertThat(arrayStruct.m_1_signed08.get()).isEqualTo(signed08);
+        for (int i = 0; 3 > i; ++i) {
+            for (int j = 0; 12 > j; ++j) {
+                assertThat(arrayStruct.m_2_signed64[i][j].get()).isEqualTo((byte) i + j + arrayValueOffset);
+            }
+        }
+        assertThat(arrayStruct.m_3_float32.get()).isEqualTo(float32);
+    }
+
+    @Test
+    public void test_struct_that_2_dimension_array_member_roundtrip_are_correct_with_offset() {
+        // Given
+        My2DimArrayStruct arrayStruct = new My2DimArrayStruct();
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byteBuffer.order(ByteOrder.nativeOrder());
+        // Test
+        test_struct_that_2_dimension_array_member_roundtrip_are_correct(arrayStruct, byteBuffer, 54);
     }
 
     static class My2DimArrayStruct extends Struct {

@@ -146,9 +146,9 @@ public class StructInnerStructTest {
         test_struct_that_member_and_inner_struct_values_are_correct_with_roundtrip(nestedStruct, byteBuffer, 123);
     }
 
-    private void test_struct_that_nested_inner_struct_positions_are_correct(MyStructWithInnerInnerStruct nestedStruct, ByteBuffer byteBuffer, int offset) {
+    private void test_struct_that_nested_inner_struct_positions_are_correct(MyStructWithInnerInnerStruct nestedStruct, int offset) {
         // When
-        nestedStruct.initByteBuffer(byteBuffer, offset);
+        nestedStruct.setStructAbsolutePosition(offset);
         // Then
         assertThat(nestedStruct.m_1_float32.offset()).isEqualTo(0);
         assertThat(nestedStruct.m_2_float64.offset()).isEqualTo(4);
@@ -176,20 +176,16 @@ public class StructInnerStructTest {
     public void test_struct_that_nested_inner_struct_positions_are_correct_native_order() {
         // Given
         MyStructWithInnerInnerStruct nestedStruct = new MyStructWithInnerInnerStruct();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_nested_inner_struct_positions_are_correct(nestedStruct, byteBuffer, 0);
+        test_struct_that_nested_inner_struct_positions_are_correct(nestedStruct, 0);
     }
 
     @Test
     public void test_struct_that_nested_inner_struct_positions_are_correct_native_order_with_offset() {
         // Given
         MyStructWithInnerInnerStruct nestedStruct = new MyStructWithInnerInnerStruct();
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
-        byteBuffer.order(ByteOrder.nativeOrder());
         // Test
-        test_struct_that_nested_inner_struct_positions_are_correct(nestedStruct, byteBuffer, 123);
+        test_struct_that_nested_inner_struct_positions_are_correct(nestedStruct, 123);
     }
 
     static class MyAbstractStructInnerStruct extends Struct {
