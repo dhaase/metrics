@@ -8,9 +8,6 @@
  */
 package eu.dirk.haase.type;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.BitSet;
@@ -887,13 +884,18 @@ public abstract class Struct implements PositionUpdatable {
             return getShort() != 0;
         }
 
-        public final void set(final short value) {
-            set(value != 0);
+        public void negate() {
+            final short value = Struct.this.structByteBuffer.getShort(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putShort(this.memberAbsolutePosition, (byte) (value != 0 ? 0 : 1));
         }
 
         public final void set(final boolean value) {
             final short boolValue = (short) (value ? 1 : 0);
             setShort(boolValue);
+        }
+
+        public final void set(final short value) {
+            set(value != 0);
         }
 
         @Override
@@ -916,13 +918,18 @@ public abstract class Struct implements PositionUpdatable {
             return getInt() != 0;
         }
 
-        public final void set(final int value) {
-            set(value != 0);
+        public void negate() {
+            final int value = Struct.this.structByteBuffer.getInt(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putInt(this.memberAbsolutePosition, (byte) (value != 0 ? 0 : 1));
         }
 
         public final void set(final boolean value) {
             final int boolValue = (value ? 1 : 0);
             setInt(boolValue);
+        }
+
+        public final void set(final int value) {
+            set(value != 0);
         }
 
         @Override
@@ -945,8 +952,9 @@ public abstract class Struct implements PositionUpdatable {
             return getLong() != 0;
         }
 
-        public final void set(final long value) {
-            set(value != 0);
+        public void negate() {
+            final long value = Struct.this.structByteBuffer.getLong(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putLong(this.memberAbsolutePosition, (byte) (value != 0 ? 0L : 1L));
         }
 
         public final void set(final boolean value) {
@@ -954,6 +962,9 @@ public abstract class Struct implements PositionUpdatable {
             setLong(boolValue);
         }
 
+        public final void set(final long value) {
+            set(value != 0);
+        }
 
         @Override
         public final Object valueObj() {
@@ -973,6 +984,11 @@ public abstract class Struct implements PositionUpdatable {
 
         public final boolean get() {
             return getByte() != 0;
+        }
+
+        public void negate() {
+            final byte value = Struct.this.structByteBuffer.get(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.put(this.memberAbsolutePosition, (byte) (value != 0 ? 0 : 1));
         }
 
         public final void set(final byte value) {
@@ -1115,14 +1131,28 @@ public abstract class Struct implements PositionUpdatable {
             super(32);
         }
 
+        public void add(float delta) {
+            final float value = Struct.this.structByteBuffer.getFloat(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putFloat(this.memberAbsolutePosition, (value + delta));
+        }
+
+        public void decrement() {
+            final float value = Struct.this.structByteBuffer.getFloat(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putFloat(this.memberAbsolutePosition, (value - 1f));
+        }
+
         public final float get() {
             return structByteBuffer.getFloat(this.memberAbsolutePosition);
+        }
+
+        public void increment() {
+            final float value = Struct.this.structByteBuffer.getFloat(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putFloat(this.memberAbsolutePosition, (value + 1f));
         }
 
         public final void set(final float value) {
             structByteBuffer.putFloat(this.memberAbsolutePosition, value);
         }
-
 
         @Override
         public final Object valueObj() {
@@ -1139,14 +1169,28 @@ public abstract class Struct implements PositionUpdatable {
             super(64);
         }
 
+        public void add(double delta) {
+            final double value = Struct.this.structByteBuffer.getDouble(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putDouble(this.memberAbsolutePosition, (value + delta));
+        }
+
+        public void decrement() {
+            final double value = Struct.this.structByteBuffer.getDouble(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putDouble(this.memberAbsolutePosition, (value - 1d));
+        }
+
         public final double get() {
             return structByteBuffer.getDouble(this.memberAbsolutePosition);
+        }
+
+        public void increment() {
+            final double value = Struct.this.structByteBuffer.getDouble(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putDouble(this.memberAbsolutePosition, (value + 1d));
         }
 
         public final void set(final double value) {
             structByteBuffer.putDouble(this.memberAbsolutePosition, value);
         }
-
 
         @Override
         public final Object valueObj() {
@@ -1190,43 +1234,43 @@ public abstract class Struct implements PositionUpdatable {
         }
 
         final byte getByte() {
-            return structByteBuffer.get(this.memberAbsolutePosition);
+            return Struct.this.structByteBuffer.get(this.memberAbsolutePosition);
         }
 
         final void setByte(final byte value) {
-            structByteBuffer.put(this.memberAbsolutePosition, value);
+            Struct.this.structByteBuffer.put(this.memberAbsolutePosition, value);
         }
 
         final char getChar() {
-            return structByteBuffer.getChar(this.memberAbsolutePosition);
+            return Struct.this.structByteBuffer.getChar(this.memberAbsolutePosition);
         }
 
         final void setChar(final char value) {
-            structByteBuffer.putChar(this.memberAbsolutePosition, value);
+            Struct.this.structByteBuffer.putChar(this.memberAbsolutePosition, value);
         }
 
         final int getInt() {
-            return structByteBuffer.getInt(this.memberAbsolutePosition);
+            return Struct.this.structByteBuffer.getInt(this.memberAbsolutePosition);
         }
 
         final void setInt(final int value) {
-            structByteBuffer.putInt(this.memberAbsolutePosition, value);
+            Struct.this.structByteBuffer.putInt(this.memberAbsolutePosition, value);
         }
 
         final long getLong() {
-            return structByteBuffer.getLong(this.memberAbsolutePosition);
+            return Struct.this.structByteBuffer.getLong(this.memberAbsolutePosition);
         }
 
         final void setLong(final long value) {
-            structByteBuffer.putLong(this.memberAbsolutePosition, value);
+            Struct.this.structByteBuffer.putLong(this.memberAbsolutePosition, value);
         }
 
         final short getShort() {
-            return structByteBuffer.getShort(this.memberAbsolutePosition);
+            return Struct.this.structByteBuffer.getShort(this.memberAbsolutePosition);
         }
 
         final void setShort(final short value) {
-            structByteBuffer.putShort(this.memberAbsolutePosition, value);
+            Struct.this.structByteBuffer.putShort(this.memberAbsolutePosition, value);
         }
 
         @Override
@@ -1253,14 +1297,28 @@ public abstract class Struct implements PositionUpdatable {
             super(16);
         }
 
+        public void add(short delta) {
+            final short value = Struct.this.structByteBuffer.getShort(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putShort(this.memberAbsolutePosition, (short) (value + delta));
+        }
+
+        public void decrement() {
+            final short value = Struct.this.structByteBuffer.getShort(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putShort(this.memberAbsolutePosition, (short) (value - 1));
+        }
+
         public final short get() {
             return getShort();
+        }
+
+        public void increment() {
+            final short value = Struct.this.structByteBuffer.getShort(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putShort(this.memberAbsolutePosition, (short) (value + 1));
         }
 
         public final void set(final short value) {
             setShort(value);
         }
-
 
         @Override
         public final Object valueObj() {
@@ -1273,12 +1331,28 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class Signed32 extends ScalarMember {
 
+
         public Signed32() {
             super(32);
         }
 
+        public void add(int delta) {
+            final int value = Struct.this.structByteBuffer.getInt(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putInt(this.memberAbsolutePosition, (value + delta));
+        }
+
+        public void decrement() {
+            final int value = Struct.this.structByteBuffer.getInt(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putInt(this.memberAbsolutePosition, (value - 1));
+        }
+
         public final int get() {
             return getInt();
+        }
+
+        public void increment() {
+            final int value = Struct.this.structByteBuffer.getInt(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putInt(this.memberAbsolutePosition, (value + 1));
         }
 
         public final void set(final int value) {
@@ -1301,14 +1375,28 @@ public abstract class Struct implements PositionUpdatable {
             super(64);
         }
 
+        public void add(long delta) {
+            final long value = Struct.this.structByteBuffer.getLong(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putLong(this.memberAbsolutePosition, (value + delta));
+        }
+
+        public void decrement() {
+            final long value = Struct.this.structByteBuffer.getLong(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putLong(this.memberAbsolutePosition, (value - 1L));
+        }
+
         public final long get() {
             return getLong();
+        }
+
+        public void increment() {
+            final long value = Struct.this.structByteBuffer.getLong(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.putLong(this.memberAbsolutePosition, (value + 1L));
         }
 
         public final void set(final long value) {
             setLong(value);
         }
-
 
         @Override
         public final Object valueObj() {
@@ -1325,14 +1413,28 @@ public abstract class Struct implements PositionUpdatable {
             super(8);
         }
 
+        public void add(byte delta) {
+            final byte value = Struct.this.structByteBuffer.get(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.put(this.memberAbsolutePosition, (byte) (value + delta));
+        }
+
+        public void decrement() {
+            final byte value = Struct.this.structByteBuffer.get(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.put(this.memberAbsolutePosition, (byte) (value - 1));
+        }
+
         public final byte get() {
             return getByte();
+        }
+
+        public void increment() {
+            final byte value = Struct.this.structByteBuffer.get(this.memberAbsolutePosition);
+            Struct.this.structByteBuffer.put(this.memberAbsolutePosition, (byte) (value + 1));
         }
 
         public final void set(final byte value) {
             setByte(value);
         }
-
 
         @Override
         public final Object valueObj() {

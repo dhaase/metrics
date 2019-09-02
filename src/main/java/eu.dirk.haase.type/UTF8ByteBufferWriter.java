@@ -234,8 +234,7 @@ public final class UTF8ByteBufferWriter extends Writer {
             _byteBuffer.put((byte) (0x80 | ((c >> 6) & 0x3F)));
             _byteBuffer.put((byte) (0x80 | (c & 0x3F)));
         } else {
-            throw new CharConversionException("Illegal character U+"
-                    + Integer.toHexString(c));
+            throw new CharConversionException("Illegal character U+" + Integer.toHexString(c));
         }
     }
 
