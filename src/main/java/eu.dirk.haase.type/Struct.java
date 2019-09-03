@@ -8,6 +8,7 @@
  */
 package eu.dirk.haase.type;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
@@ -149,7 +150,7 @@ import java.util.Objects;
  * @version 5.5.1, April 1, 2010
  */
 @SuppressWarnings("unchecked")
-public abstract class Struct implements PositionUpdatable {
+public abstract class Struct implements PositionUpdatable, Serializable {
 
     private static final Class<? extends Bool8[]> ARRAY_BOOL_08 = new Bool8[0].getClass();
     private static final Class<? extends Bool16[]> ARRAY_BOOL_16 = new Bool16[0].getClass();
@@ -171,6 +172,7 @@ public abstract class Struct implements PositionUpdatable {
             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
     private static final int INITIAL_ABSOLUTE_POSITION = -1;
+    private static final long serialVersionUID = 0L;
     private final List<PositionUpdatable> memberList;
     private final ByteOrder structByteOrder;
     private final List<StructMember> structMember;
@@ -184,12 +186,12 @@ public abstract class Struct implements PositionUpdatable {
      * Holds the index position during construction.
      * This is the index a the first unused byte available.
      */
-    private int currStructIndex;
-    private int structAbsolutePosition = INITIAL_ABSOLUTE_POSITION;
+    private transient int currStructIndex;
+    private transient int structAbsolutePosition = INITIAL_ABSOLUTE_POSITION;
     /**
      * Holds the byte buffer backing the struct (top struct).
      */
-    private ByteBuffer structByteBuffer;
+    private transient ByteBuffer structByteBuffer;
     /**
      * Holds this struct's length.
      */
@@ -481,6 +483,11 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     @Override
+    public final Struct clone() throws CloneNotSupportedException {
+        return (Struct) super.clone();
+    }
+
+    @Override
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -665,7 +672,9 @@ public abstract class Struct implements PositionUpdatable {
      * }
      * }[/code]
      */
-    public abstract class AbstractMember implements PositionUpdatable {
+    public abstract class AbstractMember implements PositionUpdatable, Serializable {
+
+        private static final long serialVersionUID = 0L;
 
         /**
          * Holds the byte length of this member.
@@ -676,7 +685,7 @@ public abstract class Struct implements PositionUpdatable {
          */
         final int memberOffset;
 
-        int memberAbsolutePosition = Struct.INITIAL_ABSOLUTE_POSITION;
+        transient int memberAbsolutePosition = Struct.INITIAL_ABSOLUTE_POSITION;
 
         /**
          * Base constructor for custom member types.
@@ -742,6 +751,7 @@ public abstract class Struct implements PositionUpdatable {
      * no word size constraint (they can straddle words boundaries).
      */
     public final class BitField extends NonScalarMember {
+        private static final long serialVersionUID = 0L;
 
         private final int memberBitLength;
 
@@ -801,6 +811,7 @@ public abstract class Struct implements PositionUpdatable {
      * by <code>1</code> and <code>false</code> represented by <code>0</code>.
      */
     public final class Bool16 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Bool16() {
             super(16);
@@ -835,6 +846,7 @@ public abstract class Struct implements PositionUpdatable {
      * by <code>1</code> and <code>false</code> represented by <code>0</code>.
      */
     public final class Bool32 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Bool32() {
             super(32);
@@ -869,6 +881,7 @@ public abstract class Struct implements PositionUpdatable {
      * by <code>1</code> and <code>false</code> represented by <code>0</code>.
      */
     public final class Bool64 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Bool64() {
             super(64);
@@ -903,6 +916,7 @@ public abstract class Struct implements PositionUpdatable {
      * by <code>1</code> and <code>false</code> represented by <code>0</code>.
      */
     public final class Bool8 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Bool8() {
             super(8);
@@ -936,6 +950,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 16 bits {@link Enum}.
      */
     public final class Enum16<T extends Enum<T>> extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         private final T[] _values;
 
@@ -965,6 +980,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 32 bits {@link Enum}.
      */
     public final class Enum32<T extends Enum<T>> extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         private final T[] _values;
 
@@ -994,6 +1010,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 64 bits {@link Enum}.
      */
     public final class Enum64<T extends Enum<T>> extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         private final T[] _values;
 
@@ -1023,6 +1040,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 8 bits {@link Enum}.
      */
     public final class Enum8<T extends Enum<T>> extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         private final T[] _values;
 
@@ -1052,6 +1070,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 32 bits float (C/C++/Java <code>float</code>).
      */
     public final class Float32 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Float32() {
             super(32);
@@ -1090,6 +1109,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 64 bits float (C/C++/Java <code>double</code>).
      */
     public final class Float64 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Float64() {
             super(64);
@@ -1125,6 +1145,7 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     public abstract class NonScalarMember extends AbstractMember {
+        private static final long serialVersionUID = 0L;
 
         public NonScalarMember(int wordSize) {
             super(wordSize);
@@ -1133,6 +1154,7 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     public abstract class ScalarMember extends AbstractMember {
+        private static final long serialVersionUID = 0L;
 
         /**
          * Base constructor for custom member types.
@@ -1221,6 +1243,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 16 bits signed integer.
      */
     public final class Signed16 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Signed16() {
             super(16);
@@ -1260,6 +1283,7 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class Signed32 extends ScalarMember {
 
+        private static final long serialVersionUID = 0L;
 
         public Signed32() {
             super(32);
@@ -1299,6 +1323,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 64 bits signed integer.
      */
     public class Signed64 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Signed64() {
             super(64);
@@ -1337,6 +1362,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 8 bits signed integer.
      */
     public final class Signed8 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Signed8() {
             super(8);
@@ -1372,6 +1398,7 @@ public abstract class Struct implements PositionUpdatable {
     }
 
     public final class StructMember extends AbstractMember {
+        private static final long serialVersionUID = 0L;
 
         final Struct innerStruct;
         final Struct outerStruct;
@@ -1398,6 +1425,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 16 bits unsigned integer.
      */
     public final class Unsigned16 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Unsigned16() {
             super(16);
@@ -1422,6 +1450,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 32 bits unsigned integer.
      */
     public final class Unsigned32 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Unsigned32() {
             super(32);
@@ -1446,6 +1475,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 8 bits unsigned integer.
      */
     public final class Unsigned8 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public Unsigned8() {
             super(8);
@@ -1472,6 +1502,7 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class Utf8String extends NonScalarMember {
 
+        private static final long serialVersionUID = 0L;
 
         public Utf8String(final int length) {
             super(length + 1);
@@ -1512,6 +1543,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 16 bits signed integer.
      */
     public final class UtfChar16 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public UtfChar16() {
             super(16);
@@ -1540,6 +1572,7 @@ public abstract class Struct implements PositionUpdatable {
      * This class represents a 8 bits unsigned integer.
      */
     public final class UtfChar8 extends ScalarMember {
+        private static final long serialVersionUID = 0L;
 
         public UtfChar8() {
             super(8);

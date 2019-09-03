@@ -8,6 +8,7 @@
  */
 package eu.dirk.haase.type;
 
+import java.io.Serializable;
 import java.nio.ByteOrder;
 
 /**
@@ -38,7 +39,7 @@ import java.nio.ByteOrder;
  * @author <a href="mailto:jean-marie@dautelle.com">Jean-Marie Dautelle</a>
  * @version 1.0, October 4, 2004
  */
-public abstract class Union extends Struct {
+public abstract class Union extends Struct implements Serializable {
 
 
     /**
