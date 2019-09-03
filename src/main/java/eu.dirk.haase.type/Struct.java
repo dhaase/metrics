@@ -10,7 +10,6 @@ package eu.dirk.haase.type;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -171,6 +170,7 @@ public abstract class Struct implements PositionUpdatable {
             '0', '1', '2', '3', '4', '5', '6', '7',
             '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
+    private static final int INITIAL_ABSOLUTE_POSITION = -1;
     private final List<PositionUpdatable> memberList;
     private final ByteOrder structByteOrder;
     private final List<StructMember> structMember;
@@ -185,7 +185,7 @@ public abstract class Struct implements PositionUpdatable {
      * This is the index a the first unused byte available.
      */
     private int currStructIndex;
-    private int structAbsolutePosition;
+    private int structAbsolutePosition = INITIAL_ABSOLUTE_POSITION;
     /**
      * Holds the byte buffer backing the struct (top struct).
      */
@@ -625,15 +625,22 @@ public abstract class Struct implements PositionUpdatable {
      */
     @Override
     public final String toString() {
-        final StringBuilder tmp = new StringBuilder();
+        final String prefix = "Struct(" + System.identityHashCode(this) + ")";
+        if ((this.structAbsolutePosition == Struct.INITIAL_ABSOLUTE_POSITION) || (this.structByteBuffer == null)) {
+            return prefix;
+        }
         final int size = size();
         final int start = getStructAbsolutePosition();
+        final StringBuilder tmp = new StringBuilder(size * 6 + 20);
+        tmp.append(prefix);
+        tmp.append('{');
         for (int i = 0; i < size; i++) {
             int b = this.structByteBuffer.get(start + i) & 0xFF;
             tmp.append(HEX_CHAR[b >> 4]);
             tmp.append(HEX_CHAR[b & 0xF]);
             tmp.append(((i & 0xF) == 0xF) ? '\n' : ' ');
         }
+        tmp.append('}');
         return tmp.toString();
     }
 
@@ -659,6 +666,7 @@ public abstract class Struct implements PositionUpdatable {
      * }[/code]
      */
     public abstract class AbstractMember implements PositionUpdatable {
+
         /**
          * Holds the byte length of this member.
          */
@@ -668,7 +676,7 @@ public abstract class Struct implements PositionUpdatable {
          */
         final int memberOffset;
 
-        int memberAbsolutePosition;
+        int memberAbsolutePosition = Struct.INITIAL_ABSOLUTE_POSITION;
 
         /**
          * Base constructor for custom member types.
@@ -735,100 +743,23 @@ public abstract class Struct implements PositionUpdatable {
      */
     public final class BitField extends NonScalarMember {
 
-        private final BitSet bitSet;
-
         private final int memberBitLength;
 
         public BitField(final int nbrOfBits) {
             super(nbrOfBits / 8);
             this.memberBitLength = nbrOfBits;
-            this.bitSet = new BitSet(nbrOfBits);
             if ((nbrOfBits % 8) != 0) {
                 throw new IllegalArgumentException("Number of bits (" +
                         nbrOfBits + ") must an integer multiple of 8.");
             }
         }
 
-        public final void clear(int bitIndex) {
-            rangeCheck(bitIndex);
-            bitSet.clear(bitIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final void clear(int fromIndex, int toIndex) {
-            rangeCheck(toIndex);
-            bitSet.clear(fromIndex, toIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final void clear() {
-            bitSet.clear();
-            set(bitSet.toByteArray());
-        }
-
-        public final void flip(int bitIndex) {
-            rangeCheck(bitIndex);
-            bitSet.flip(bitIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final void flip(int fromIndex, int toIndex) {
-            rangeCheck(toIndex);
-            bitSet.flip(fromIndex, toIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final boolean get(int bitIndex) {
-            rangeCheck(bitIndex);
-            final boolean result = bitSet.get(bitIndex);
-            set(bitSet.toByteArray());
-            return result;
-        }
-
-        public final int nextClearBit(int fromIndex) {
-            rangeCheck(fromIndex);
-            final int result = bitSet.nextClearBit(fromIndex);
-            set(bitSet.toByteArray());
-            return result;
-        }
-
-        public final int nextSetBit(int fromIndex) {
-            rangeCheck(fromIndex);
-            final int result = bitSet.nextSetBit(fromIndex);
-            set(bitSet.toByteArray());
-            return result;
-        }
-
-        private final void rangeCheck(int bitIndex) {
-            if (memberBitLength > bitIndex) {
-                throw new IllegalArgumentException("Bit index (" +
-                        bitIndex + ") is out of range; Max bit length: " +
-                        memberBitLength);
+        public final byte[] get() {
+            final byte[] bitFieldBytes = new byte[memberBitLength / 8];
+            for (int i = 0; bitFieldBytes.length > i; ++i) {
+                bitFieldBytes[i] = structByteBuffer.get(this.memberAbsolutePosition + i);
             }
-        }
-
-        public final void set(int bitIndex) {
-            rangeCheck(bitIndex);
-            bitSet.set(bitIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final void set(int bitIndex, boolean value) {
-            rangeCheck(bitIndex);
-            bitSet.set(bitIndex, value);
-            set(bitSet.toByteArray());
-        }
-
-        public final void set(int fromIndex, int toIndex) {
-            rangeCheck(toIndex);
-            bitSet.set(fromIndex, toIndex);
-            set(bitSet.toByteArray());
-        }
-
-        public final void set(int fromIndex, int toIndex, boolean value) {
-            rangeCheck(toIndex);
-            bitSet.set(fromIndex, toIndex, value);
-            set(bitSet.toByteArray());
+            return bitFieldBytes;
         }
 
         public final void set(final byte[] value) {
@@ -837,8 +768,8 @@ public abstract class Struct implements PositionUpdatable {
             }
         }
 
-        public final String toBinary() {
-            final StringBuffer sb = new StringBuffer();
+        public final String toBinaryString() {
+            final StringBuffer sb = new StringBuffer(memberBitLength + length());
 
             for (int i = 0; (memberBitLength / 8) > i; ++i) {
                 byte value = structByteBuffer.get(this.memberAbsolutePosition + i);
@@ -856,17 +787,12 @@ public abstract class Struct implements PositionUpdatable {
             return sb.toString();
         }
 
-        public final byte[] toByteArray() {
-            final byte[] bitFieldBytes = new byte[memberBitLength / 8];
-            for (int i = 0; bitFieldBytes.length > i; ++i) {
-                bitFieldBytes[i] = structByteBuffer.get(this.memberAbsolutePosition + i);
-            }
-            return bitFieldBytes;
-        }
-
         @Override
         public final String toString() {
-            return toBinary();
+            if ((memberAbsolutePosition == Struct.INITIAL_ABSOLUTE_POSITION) || (Struct.this.structByteBuffer == null)) {
+                return "";
+            }
+            return toBinaryString();
         }
     }
 
@@ -1280,6 +1206,9 @@ public abstract class Struct implements PositionUpdatable {
 
         @Override
         public final String toString() {
+            if ((memberAbsolutePosition == Struct.INITIAL_ABSOLUTE_POSITION) || (Struct.this.structByteBuffer == null)) {
+                return "0";
+            }
             final Object valueObj = this.valueObj();
             return (valueObj == null ? super.toString() : String.valueOf(valueObj));
         }
@@ -1572,6 +1501,9 @@ public abstract class Struct implements PositionUpdatable {
 
         @Override
         public final String toString() {
+            if ((memberAbsolutePosition == Struct.INITIAL_ABSOLUTE_POSITION) || (Struct.this.structByteBuffer == null)) {
+                return "";
+            }
             return this.get().toString();
         }
     }
