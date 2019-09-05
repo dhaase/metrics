@@ -9,8 +9,15 @@ public class Allocator {
     private final Block block;
     private final ByteBuffer buffer;
     private final int bufferSize;
+    private final int startOffset;
+
 
     public Allocator(final int bufferSize) {
+        this(0, bufferSize);
+    }
+
+    public Allocator(final int startOffset, final int bufferSize) {
+        this.startOffset = startOffset;
         this.bufferSize = bufferSize;
         this.buffer = ByteBuffer.allocateDirect(bufferSize);
         this.block = new Block();
@@ -18,11 +25,11 @@ public class Allocator {
     }
 
     public int allocate(final Struct struct) {
-        block.initByteBuffer(this.buffer, 0);
+        block.initByteBuffer(this.buffer, startOffset);
 
-        short lastNext = 0;
+        short lastNext = (short) startOffset;
         short currNext = block.next.get();
-        while ((currNext > 0) && (block.data.get() > 0)) {
+        while ((currNext > startOffset) && (block.data.get() > startOffset)) {
             lastNext = currNext;
             this.block.setStructAbsolutePosition(lastNext);
             currNext = block.next.get();

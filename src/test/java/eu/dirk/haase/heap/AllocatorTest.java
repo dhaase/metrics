@@ -11,7 +11,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AllocatorTest {
 
     @Test
-    public void test() {
+    public void test_that_offset() {
+        // Given
+        final int startOffset = 123;
+        Allocator allocator = new Allocator(startOffset, 2048);
+        MyStruct struct = new MyStruct();
+        // When
+        int absolutePosition1 = allocator.allocate(struct);
+        int absolutePosition2 = allocator.allocate(struct);
+        int absolutePosition3 = allocator.allocate(struct);
+        int absolutePosition4 = allocator.allocate(struct);
+        // Then
+        assertThat(absolutePosition1).isEqualTo(2 + startOffset);
+        assertThat(absolutePosition2).isEqualTo(11 + startOffset);
+        assertThat(absolutePosition3).isEqualTo(20 + startOffset);
+        assertThat(absolutePosition4).isEqualTo(29 + startOffset);
+    }
+
+    @Test
+    public void test_that() {
         // Given
         Allocator allocator = new Allocator(2048);
         MyStruct struct = new MyStruct();
