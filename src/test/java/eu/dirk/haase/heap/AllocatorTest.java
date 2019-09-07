@@ -33,7 +33,7 @@ public class AllocatorTest {
         final int startOffset = 123;
         MyStruct struct = new MyStruct();
         final int countStructs = 10;
-        int maximumSize = Allocator.calculateNeededSizeOverAll(struct.size()) * countStructs;
+        int maximumSize =  Allocator.calculateNeededSizeOverAll(struct.size()) * countStructs;
         Allocator allocator = new Allocator(startOffset, maximumSize);
         //
         for (int i = 0; countStructs > i; ++i) {
