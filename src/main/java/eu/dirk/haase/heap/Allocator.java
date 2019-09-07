@@ -16,18 +16,22 @@ public class Allocator {
         this(0, bufferSize);
     }
 
-    public Allocator(final int startOffset, final int bufferSize) {
+    public Allocator(final ByteBuffer buffer, final int startOffset, final int bufferSize) {
         this.startOffset = startOffset;
         this.bufferSize = bufferSize;
-        this.buffer = ByteBuffer.allocateDirect(bufferSize);
+        this.buffer = buffer;
         this.block = new Block();
         this.buffer.order(this.block.byteOrder());
+    }
+
+    public Allocator(final int startOffset, final int bufferSize) {
+        this(ByteBuffer.allocateDirect(bufferSize), startOffset, bufferSize);
     }
 
     public int allocate(final Struct struct) {
         block.initByteBuffer(this.buffer, startOffset);
 
-        short lastNext = (short) startOffset;
+        short lastNext;
         short currNext = block.next.get();
         while ((currNext > startOffset) && (block.data.get() > startOffset)) {
             lastNext = currNext;
@@ -35,8 +39,8 @@ public class Allocator {
             currNext = block.next.get();
         }
 
-        final short dataPosition = (short) (block.data.length() + lastNext);
-        final short newNext = (short) (block.size() + lastNext + struct.size());
+        final short dataPosition = (short) this.block.dataPosition();
+        final short newNext = (short) this.block.nextHeaderPosition(struct.size());
         if (newNext < bufferSize) {
             block.data.set(dataPosition);
             block.next.set(newNext);
@@ -48,7 +52,7 @@ public class Allocator {
     }
 
     public void free(final int dataPosition) {
-        final short headerAbsolutePosition = (short) (dataPosition - block.data.length());
+        final int headerAbsolutePosition = this.block.headerPosition(dataPosition);
         this.block.setStructAbsolutePosition(headerAbsolutePosition);
         this.block.data.set((short) 0);
         print();

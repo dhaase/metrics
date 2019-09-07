@@ -10,6 +10,18 @@ final class Block extends Struct {
     public Block() {
     }
 
+    public int headerPosition(final int dataPosition) {
+        return dataPosition - data.length();
+    }
+
+    public int dataPosition() {
+        return data.length() + absolutePosition();
+    }
+
+    public int nextHeaderPosition(final int dataSize) {
+        return size() + absolutePosition() + dataSize;
+    }
+
     public int dataSize() {
         return (data.get() == 0 ? 0 : (next.get() - data.get() - next.length()));
     }
