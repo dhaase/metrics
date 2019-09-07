@@ -47,6 +47,7 @@ public final class Allocator {
             currNext = block.next.get();
         }
 
+        this.block.setStructAbsolutePosition(lastNext);
         if ((lastNext >= startPosition) && (block.data.get() == EMPTY_DATA_SIZE)) {
             final short dataPosition = (short) this.block.dataPosition();
             final short newNext = (short) this.block.nextHeaderPosition(struct.size());

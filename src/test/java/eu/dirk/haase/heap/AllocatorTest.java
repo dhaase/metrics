@@ -52,7 +52,6 @@ public class AllocatorTest {
         MyStruct struct = new MyStruct();
         final int countStructs = 10;
         int maximumSize = Allocator.calculateNeededSizeOverAll(struct.size()) * countStructs;
-        System.out.println(Allocator.calculateNeededSizeOverAll(struct.size()));
         Allocator allocator = new Allocator(maximumSize);
         //
         for(int i=0; countStructs > i; ++i) {
@@ -61,8 +60,8 @@ public class AllocatorTest {
             struct.m_1_signed08.set((byte)i);
             struct.m_2_float32.set((float) i);
             // Then
-            System.out.println(dataPosition);
         }
+        allocator.free(13);
         int dataPosition = allocator.allocate(struct);
         System.out.println(dataPosition);
     }
