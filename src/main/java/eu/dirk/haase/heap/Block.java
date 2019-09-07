@@ -4,6 +4,8 @@ import eu.dirk.haase.type.Struct;
 
 final class Block extends Struct {
 
+    static final int blockSize = new Block().size();
+
     final Signed16 data = new Signed16();
     final Signed16 next = new Signed16();
 
@@ -11,11 +13,11 @@ final class Block extends Struct {
     }
 
     public int headerPosition(final int dataPosition) {
-        return dataPosition - data.length();
+        return dataPosition - blockSize;
     }
 
     public int dataPosition() {
-        return data.length() + absolutePosition();
+        return blockSize + absolutePosition();
     }
 
     public int nextHeaderPosition(final int dataSize) {
