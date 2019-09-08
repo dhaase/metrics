@@ -105,7 +105,6 @@ public final class Allocator {
                 block.next.set(newNext);
             }
         }
-        print();
         return dataPosition;
     }
 
@@ -113,7 +112,4 @@ public final class Allocator {
         struct.initByteBuffer(this.buffer, dataPosition);
     }
 
-    private void print() {
-        System.out.println("Block{data=" + block.data.get() + "; next=" + block.next.get() + "}");
-    }
 }

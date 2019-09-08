@@ -45,8 +45,6 @@ public class AllocatorTest {
             // Then
             assertThat(dataPosition).isEqualTo(startOffset + (Allocator.headerSize() * (i + 1)) + (struct.size() * i));
         }
-        System.out.println(allocator.free(154));
-        System.out.println(allocator.allocate(struct.size()));
     }
 
     @Test
