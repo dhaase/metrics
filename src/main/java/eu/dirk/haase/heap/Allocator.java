@@ -39,18 +39,18 @@ public final class Allocator {
         return Block.blockSize;
     }
 
-    public int allocate(final Struct struct) {
-        short lastNext = findFreeBlock(struct);
+    public int allocate(final int dataSize) {
+        short lastNext = findFreeBlock(dataSize);
 
         if (lastNext != NO_BLOCK_POSITION) {
             this.block.setStructAbsolutePosition(lastNext);
-            return occupyCurrentFreeBlock(struct);
+            return occupyCurrentFreeBlock(dataSize);
         }
 
         return NO_DATA_POSITION;
     }
 
-    public short findFreeBlock(final Struct struct) {
+    public short findFreeBlock(final int dataSize) {
         block.initByteBuffer(this.buffer, startPosition);
 
         short lastNext = block.next.get();
@@ -65,7 +65,7 @@ public final class Allocator {
         this.block.setStructAbsolutePosition(lastNext);
         if ((lastNext >= startPosition)
                 && (block.data.get() == EMPTY_DATA_SIZE)
-                && (this.buffer.limit() >= (this.block.dataPosition() + struct.size()))) {
+                && (this.buffer.limit() >= (this.block.dataPosition() + dataSize))) {
             return lastNext;
         }
 
@@ -92,13 +92,13 @@ public final class Allocator {
         return false;
     }
 
-    public boolean isAvailable(final Struct struct) {
-        return (findFreeBlock(struct) != NO_BLOCK_POSITION);
+    public boolean isAvailable(final int dataSize) {
+        return (findFreeBlock(dataSize) != NO_BLOCK_POSITION);
     }
 
-    private int occupyCurrentFreeBlock(Struct struct) {
+    private int occupyCurrentFreeBlock(final int dataSize) {
         final short dataPosition = (short) this.block.dataPosition();
-        final short newNext = (short) this.block.nextHeaderPosition(struct.size());
+        final short newNext = (short) this.block.nextHeaderPosition(dataSize);
         if (newNext <= (maximumSize + startPosition)) {
             block.data.set(dataPosition);
             if ((newNext < (maximumSize + startPosition)) && (this.buffer.limit() > (newNext + Block.blockSize))) {
@@ -106,8 +106,11 @@ public final class Allocator {
             }
         }
         print();
-        struct.initByteBuffer(this.buffer, dataPosition);
         return dataPosition;
+    }
+
+    public void initByteBuffer(final Struct struct, final int dataPosition) {
+        struct.initByteBuffer(this.buffer, dataPosition);
     }
 
     private void print() {

@@ -16,10 +16,10 @@ public class AllocatorTest {
         Allocator allocator = new Allocator(2048);
         MyStruct struct = new MyStruct();
         // When
-        int dataPosition1 = allocator.allocate(struct);
-        int dataPosition2 = allocator.allocate(struct);
-        int dataPosition3 = allocator.allocate(struct);
-        int dataPosition4 = allocator.allocate(struct);
+        int dataPosition1 = allocator.allocate(struct.size());
+        int dataPosition2 = allocator.allocate(struct.size());
+        int dataPosition3 = allocator.allocate(struct.size());
+        int dataPosition4 = allocator.allocate(struct.size());
         // Then
         assertThat(dataPosition1).isEqualTo((Allocator.headerSize() * 1));
         assertThat(dataPosition2).isEqualTo((Allocator.headerSize() * 2) + (struct.size() * 1));
@@ -38,14 +38,15 @@ public class AllocatorTest {
         //
         for (int i = 0; countStructs > i; ++i) {
             // When
-            int dataPosition = allocator.allocate(struct);
+            int dataPosition = allocator.allocate(struct.size());
+            allocator.initByteBuffer(struct, dataPosition);
             struct.m_1_signed08.set((byte) i);
             struct.m_2_float32.set((float) i);
             // Then
             assertThat(dataPosition).isEqualTo(startOffset + (Allocator.headerSize() * (i + 1)) + (struct.size() * i));
         }
         System.out.println(allocator.free(154));
-        System.out.println(allocator.allocate(struct));
+        System.out.println(allocator.allocate(struct.size()));
     }
 
     @Test
@@ -55,10 +56,10 @@ public class AllocatorTest {
         Allocator allocator = new Allocator(startOffset, 2048);
         MyStruct struct = new MyStruct();
         // When
-        int dataPosition1 = allocator.allocate(struct);
-        int dataPosition2 = allocator.allocate(struct);
-        int dataPosition3 = allocator.allocate(struct);
-        int dataPosition4 = allocator.allocate(struct);
+        int dataPosition1 = allocator.allocate(struct.size());
+        int dataPosition2 = allocator.allocate(struct.size());
+        int dataPosition3 = allocator.allocate(struct.size());
+        int dataPosition4 = allocator.allocate(struct.size());
         // Then
         assertThat(dataPosition1).isEqualTo(startOffset + (Allocator.headerSize() * 1));
         assertThat(dataPosition2).isEqualTo(startOffset + (Allocator.headerSize() * 2) + (struct.size() * 1));
